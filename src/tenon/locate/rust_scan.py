@@ -4,6 +4,7 @@ The scan reports evidence only: every hit carries ``rooted``. Whether a hit is
 certain is decided elsewhere.
 """
 
+import posixpath
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from functools import cache
@@ -234,10 +235,10 @@ def _returns(
 ) -> dict[str, tuple[str, ...]]:
     """Same-file function name -> SDK return chain from its annotation.
 
-    A missing, ``impl`` or non-SDK return type is no evidence; a later
-    definition of the same name replaces or clears the map.
+    A missing, ``impl`` or non-SDK return type is no evidence; a name defined
+    more than once in the module is ambiguous and dropped.
     """
-    found: dict[str, tuple[str, ...]] = {}
+    definitions: dict[str, list[tuple[str, ...] | None]] = {}
     for node in _walk(tree.root_node):
         if node.type != "function_item":
             continue
@@ -245,11 +246,123 @@ def _returns(
         if name is None:
             continue
         ref = _type_ref(node.child_by_field_name("return_type"), roots, crate)
-        if ref is None or not ref[1]:
-            found.pop(_text(name), None)
-        else:
-            found[_text(name)] = ref[0]
+        definitions.setdefault(_text(name), []).append(
+            ref[0] if ref is not None and ref[1] else None
+        )
+    return {
+        name: chains[0]
+        for name, chains in definitions.items()
+        if len(chains) == 1 and chains[0] is not None
+    }
+
+
+def _src_dir(rel: str) -> str:
+    """The crate's ``src/`` directory for a module, else its own directory."""
+    parts = rel.split("/")[:-1]
+    if "src" in parts:
+        return "/".join(parts[: parts.index("src") + 1])
+    return posixpath.dirname(rel)
+
+
+def _path_file(
+    directory: str, segments: tuple[str, ...], files: frozenset[str]
+) -> str | None:
+    """The `.rs` or `mod.rs` file a module path names, if it exists."""
+    if not segments:
+        return None
+    base = "/".join(segment for segment in (directory, *segments) if segment)
+    return next(
+        (
+            candidate
+            for candidate in (f"{base}.rs", f"{base}/mod.rs")
+            if candidate in files
+        ),
+        None,
+    )
+
+
+def _declarations(module: _Module, files: frozenset[str]) -> dict[str, str]:
+    """`mod name;` -> the file it declares, sibling or crate-rooted.
+
+    Spec AC1: a sibling module is resolved relative to the file's directory or
+    the crate `src/`; an inline `mod name { .. }` body is no other file.
+    """
+    directory = posixpath.dirname(module.rel)
+    src = _src_dir(module.rel)
+    declared: dict[str, str] = {}
+    for node in module.tree.root_node.named_children:
+        if node.type != "mod_item" or node.child_by_field_name("body") is not None:
+            continue
+        name = node.child_by_field_name("name")
+        if name is None:
+            continue
+        declared_name = _text(name)
+        target = _path_file(directory, (declared_name,), files) or _path_file(
+            src, (declared_name,), files
+        )
+        if target is not None:
+            declared[declared_name] = target
+    return declared
+
+
+def _imports(
+    module: _Module,
+    src: str,
+    declared: Mapping[str, str],
+    index: Mapping[str, Mapping[str, tuple[str, ...]]],
+    files: frozenset[str],
+) -> dict[str, tuple[str, ...]]:
+    """Bare names a file imports from another module, with their return chain."""
+    found: dict[str, tuple[str, ...]] = {}
+    # shortcut: single-name `use` paths only; groups and aliases stay
+    # unindexed until a fixture needs them.
+    for node in module.tree.root_node.named_children:
+        if node.type != "use_declaration":
+            continue
+        for child in node.named_children:
+            if child.type != "scoped_identifier":
+                continue
+            segments = tuple(_text(child).split("::"))
+            if segments[0] == "crate":
+                target = _path_file(src, segments[1:-1], files)
+            elif len(segments) == 2:
+                target = declared.get(segments[0])
+            else:
+                target = None
+            if target is None:
+                continue
+            chain = index.get(target, {}).get(segments[-1])
+            if chain is not None:
+                found[segments[-1]] = chain
     return found
+
+
+@dataclass(frozen=True, slots=True)
+class _Modules:
+    """The crate's module files and the signatures one file can reach."""
+
+    src: str
+    files: frozenset[str]
+    declared: Mapping[str, str]
+    index: Mapping[str, Mapping[str, tuple[str, ...]]]
+    imported: Mapping[str, tuple[str, ...]]
+
+
+def _local_modules(
+    module: _Module,
+    index: Mapping[str, Mapping[str, tuple[str, ...]]],
+    files: frozenset[str],
+) -> _Modules:
+    """Spec AC1: resolve the module declarations and imports of one file."""
+    src = _src_dir(module.rel)
+    declared = _declarations(module, files)
+    return _Modules(
+        src,
+        files,
+        declared,
+        index,
+        _imports(module, src, declared, index, files),
+    )
 
 
 def _fields(struct_expression: Node) -> tuple[Node, ...]:
@@ -286,6 +399,7 @@ class _Visitor:
         roots: dict[str, tuple[str, ...]],
         receivers: Mapping[str, str],
         returns: dict[str, tuple[str, ...]],
+        modules: _Modules,
     ) -> None:
         self._source = source
         self._crate = crate
@@ -294,6 +408,7 @@ class _Visitor:
             key.replace("::", "."): value for key, value in receivers.items()
         }
         self._returns = returns
+        self._modules = modules
         self._bindings: dict[str, _Binding] = {}
         self.rooted = False
         self.hits: list[Hit] = []
@@ -384,9 +499,28 @@ class _Visitor:
                 return _Binding(chain)
         if function is not None and function.type == "identifier":
             annotated = self._returns.get(_text(function))
+            if annotated is None:
+                annotated = self._modules.imported.get(_text(function))
             if annotated is not None:
                 return _Binding(annotated)
-        return None
+        return self._local_evidence(function)
+
+    def _local_evidence(self, function: Node | None) -> _Binding | None:
+        """The receiver chain of a call into another module of the crate."""
+        if function is None or function.type != "scoped_identifier":
+            return None
+        segments = tuple(_text(function).split("::"))
+        if segments[0] == "crate":
+            target = _path_file(self._modules.src, segments[1:-1], self._modules.files)
+        elif len(segments) == 2:
+            target = self._modules.declared.get(segments[0])
+        else:
+            # shortcut: one bare module segment only, until a fixture needs it.
+            return None
+        if target is None:
+            return None
+        chain = self._modules.index.get(target, {}).get(segments[-1])
+        return _Binding(chain) if chain is not None else None
 
     def _parameters(self, node: Node) -> None:
         """Seed the body from the annotated parameters of a function."""
@@ -562,16 +696,26 @@ def scan_rust(
     root: str | Path, sdk_package: str, receivers: Mapping[str, str] | None = None
 ) -> ScanResult:
     """Parse ``root`` read-only and report SDK-rooted Rust evidence."""
-    modules: list[str] = []
-    hits: list[Hit] = []
+    parsed = []
     for module in _read(Path(root)):
         roots, crate_used = _bindings(module.tree, sdk_package)
+        parsed.append((module, roots, crate_used))
+    files = frozenset(module.rel for module, _, _ in parsed)
+    # Spec AC1/S1: index each module's resolved signatures before the pass.
+    index = {
+        module.rel: _returns(module.tree, roots, sdk_package)
+        for module, roots, _ in parsed
+    }
+    modules: list[str] = []
+    hits: list[Hit] = []
+    for module, roots, crate_used in parsed:
         visitor = _Visitor(
             module.source,
             sdk_package,
             roots,
             receivers or {},
-            _returns(module.tree, roots, sdk_package),
+            index[module.rel],
+            _local_modules(module, index, files),
         )
         visitor.visit(module.tree.root_node)
         if crate_used or visitor.rooted:
