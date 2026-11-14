@@ -15,7 +15,7 @@ Engine capabilities in build order. Each lands test-first.
 | **T9** | **Benchmark and history.** Labelled (change, patch, proof, outcome) corpus. | T4, T5 | Measure against human outcomes | **Shipped 2026-11-07** |
 | **T10** | **Provider layer and GitHub App (hosted).** Vendor-pushed migrations. | T4-T9 | Opt-in, BYOK | **Shipped 2026-11-11 (MVP)** — GitHub App remote, provider bundle, local/installed fan-out, a self-hosted service and webhook-triggered runs; a hardened cloud deployment is later |
 | **T11** | **More languages.** Go, Rust, C#. | T2 pattern | One at a time | **Shipped 2026-11-11** — Rust, Go and C# locators |
-| **T12** | **Receiver tracking.** Method/fluent chains through an explicitly typed client. | T11 | Explicit evidence only | **Shipped 2026-11-12** — Rust, Go, C#, Python and TypeScript; T12c return types, T12d parameters |
+| **T12** | **Receiver tracking.** Method/fluent chains through an explicitly typed client. | T11 | Explicit evidence only | **Shipped 2026-11-12** — five languages; T12c returns, T12d parameters, T12e cross-file/closures |
 | **T13** | **Hardened deployment.** Container, TLS proxy, backups, resilience. | T10e | Operator-owned secrets | **Shipped 2026-11-12** — deployable Compose + Caddy, workers/retries/cancel/metrics, SQLite hardening |
 
 ### T1 as shipped (2026-10-26)
@@ -359,9 +359,23 @@ in all five languages. The parameter type resolves through the shipped roots/ali
 per function (a local assignment rebinds/clears, a nested function has its own parameters), and the
 shared policy is unchanged. 2,662 tests, offline.
 
-Known limits: per-function only; an outer parameter captured by a nested closure, `self`/`this`,
-generics/overloads and cross-file/package indexes are not followed; an unannotated parameter is not
-evidence.
+Known limits: per-function only; `self`/`this`, generics/overloads and repo-wide cross-package
+indexes are not followed; an unannotated parameter is not evidence. T12e resolves cross-file
+signatures in the same package and closure capture.
+
+### T12e as built (2026-11-15)
+
+Each scanner indexes annotated helper return types across the files of the same package/module/
+namespace and resolves the caller's import: Go directory packages, C# directory methods, Python
+relative/absolute module imports and module attributes, TypeScript relative imports (`index.*`
+included) and Rust `mod`/`use` paths. A call to an indexed helper roots the assigned receiver; a
+duplicate name is ambiguous (no evidence); a function/arrow/closure inherits the enclosing
+receiver/parameter bindings (a Rust nested `fn` does not capture). The chain stays `Type.member...`
+and the shared policy is unchanged. 2,719 tests, offline.
+
+Known limits: same package only; repo-wide/cross-package indexes, `*`/wildcard and re-export chains,
+grouped/aliased Rust `use`, Python installed packages and TypeScript `node_modules` are not followed;
+a duplicate name stays unrooted; a helper imported from another package is not evidence.
 
 ### T13a as built (2026-11-12)
 

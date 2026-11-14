@@ -133,6 +133,8 @@ def scan(
     """Parse ``root`` read-only and report SDK-rooted evidence."""
     modules = _read(Path(root))
     reachable = _reachable(modules, sdk_package)
+    # Spec AC1/S1: index every module before the per-file receiver pass.
+    index = _module_returns(modules, sdk_package)
     hits: list[Hit] = []
     dynamics: list[Dynamic] = []
     for module in reachable:
@@ -146,6 +148,7 @@ def scan(
             {**roots, **alias_roots},
             classes | class_aliases,
             receivers or {},
+            _imported(module, index),
         )
         visitor.visit(module.tree)
         hits.extend(visitor.hits)
@@ -466,9 +469,9 @@ def _returns(
     """Same-file function name -> SDK return chain from its annotation.
 
     A missing, string, generic or non-SDK ``returns`` annotation is no
-    evidence; a later definition of the same name replaces or clears the map.
+    evidence; a name defined more than once in the module is ambiguous.
     """
-    found: dict[str, tuple[str, ...]] = {}
+    definitions: dict[str, list[tuple[str, ...] | None]] = {}
     functions = sorted(
         (
             node
@@ -480,11 +483,104 @@ def _returns(
     for node in functions:
         root, tail = _parts(node.returns) if node.returns is not None else (None, ())
         full = _full(root, tail, roots, sdk_parts)
-        if full is None:
-            found.pop(node.name, None)
-        else:
-            found[node.name] = full[len(sdk_parts) :]
-    return found
+        definitions.setdefault(node.name, []).append(
+            full[len(sdk_parts) :] if full is not None else None
+        )
+    return {
+        name: chains[0]
+        for name, chains in definitions.items()
+        if len(chains) == 1 and chains[0] is not None
+    }
+
+
+def _module_returns(
+    modules: Sequence[_Module], sdk_package: str
+) -> dict[str, dict[str, tuple[str, ...]]]:
+    """Module name -> function name -> SDK return chain.
+
+    Spec AC1/S1: every module is indexed once and each chain is resolved in its
+    own file's imports; duplicate names in one module are already ambiguous.
+    """
+    sdk_parts = tuple(sdk_package.split("."))
+    index: dict[str, dict[str, tuple[str, ...]]] = {}
+    for module in modules:
+        if not module.name:
+            continue
+        roots, _, class_paths = _bindings(module.tree, sdk_package)
+        alias_roots, _, _ = _aliases(
+            module.tree, roots, class_paths, module.source, sdk_package
+        )
+        index.setdefault(
+            module.name, _returns(module.tree, {**roots, **alias_roots}, sdk_parts)
+        )
+    return index
+
+
+@dataclass(frozen=True, slots=True)
+class _Imported:
+    """The cross-file functions and modules one caller imports."""
+
+    functions: Mapping[str, tuple[str, ...]]
+    modules: Mapping[str, Mapping[str, tuple[str, ...]]]
+    aliases: Mapping[str, str]
+
+
+def _imported(
+    module: _Module, index: Mapping[str, Mapping[str, tuple[str, ...]]]
+) -> _Imported:
+    """Resolve a file's imports of indexed modules and their functions.
+
+    Spec AC1/AC2: relative and absolute from-imports and module imports map to
+    the module index; the caller's own package anchors a relative import.
+    """
+    functions: dict[str, tuple[str, ...]] = {}
+    aliases: dict[str, str] = {}
+    for node in module.tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.asname:
+                    if alias.name in index:
+                        aliases[alias.asname] = alias.name
+                    continue
+                root = alias.name.split(".")[0]
+                if any(name == root or name.startswith(f"{root}.") for name in index):
+                    aliases[root] = root
+        elif isinstance(node, ast.ImportFrom):
+            base = _import_base(module, node)
+            if base is None:
+                continue
+            source = (
+                f"{base}.{node.module}"
+                if base and node.module
+                else node.module or base
+            )
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                target = f"{source}.{alias.name}" if source else alias.name
+                if target in index:
+                    aliases[alias.asname or alias.name] = target
+                    continue
+                chain = index.get(source, {}).get(alias.name)
+                if chain is not None:
+                    functions[alias.asname or alias.name] = chain
+    return _Imported(functions, index, aliases)
+
+
+def _parameters(arguments: ast.arguments) -> set[str]:
+    """Every parameter name in one function/lambda signature."""
+    names = {
+        argument.arg
+        for argument in (
+            *arguments.posonlyargs,
+            *arguments.args,
+            *arguments.kwonlyargs,
+        )
+    }
+    for extra in (arguments.vararg, arguments.kwarg):
+        if extra is not None:
+            names.add(extra.arg)
+    return names
 
 
 class _Visitor(ast.NodeVisitor):
@@ -497,12 +593,14 @@ class _Visitor(ast.NodeVisitor):
         roots: dict[str, tuple[str, ...]],
         classes: set[str],
         receivers: Mapping[str, str] | None = None,
+        imported: _Imported | None = None,
     ) -> None:
         self._source = source
         self._sdk_parts = tuple(sdk_package.split("."))
         self._roots = roots
         self._classes = classes
         self._receivers = receivers or {}
+        self._imported = imported or _Imported({}, {}, {})
         self._bindings: dict[str, tuple[str, ...]] = {}
         self._returns: dict[str, tuple[str, ...]] = {}
         self._callee = 0
@@ -561,7 +659,28 @@ class _Visitor(ast.NodeVisitor):
             annotated = self._returns.get(value.func.id)
             if annotated is not None:
                 return annotated
+        cross_file = self._imported_return(value.func)
+        if cross_file is not None:
+            return cross_file
         return self._canonical(value.func)
+
+    def _imported_return(self, callee: ast.expr) -> tuple[str, ...] | None:
+        """The indexed return chain of an imported function or module attribute."""
+        root, tail = _parts(callee)
+        if root is None:
+            return None
+        module = self._imported.aliases.get(root)
+        if module is not None:
+            parts = list(tail)
+            while parts and f"{module}.{parts[0]}" in self._imported.modules:
+                module = f"{module}.{parts[0]}"
+                parts.pop(0)
+            if len(parts) == 1:
+                return self._imported.modules.get(module, {}).get(parts[0])
+            return None
+        if not tail:
+            return self._imported.functions.get(root)
+        return None
 
     def _bind_receiver(self, name: str, chain: tuple[str, ...] | None) -> None:
         if chain:
@@ -587,17 +706,9 @@ class _Visitor(ast.NodeVisitor):
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         saved = self._bindings
         arguments = node.args
-        parameters = {
-            argument.arg
-            for argument in (
-                *arguments.posonlyargs,
-                *arguments.args,
-                *arguments.kwonlyargs,
-            )
-        }
-        for extra in (arguments.vararg, arguments.kwarg):
-            if extra is not None:
-                parameters.add(extra.arg)
+        parameters = _parameters(arguments)
+        # Spec AC4: a nested def keeps the enclosing bindings; its parameters
+        # shadow them, and its own assignments are restored on the way out.
         self._bindings = {
             name: chain for name, chain in saved.items() if name not in parameters
         }
@@ -612,6 +723,16 @@ class _Visitor(ast.NodeVisitor):
             chain = self._canonical(argument.annotation)
             if chain is not None:
                 self._bindings[argument.arg] = chain
+        self.generic_visit(node)
+        self._bindings = saved
+
+    def visit_Lambda(self, node: ast.Lambda) -> None:
+        # Spec AC4: a lambda inherits the enclosing bindings; its parameters shadow.
+        saved = self._bindings
+        parameters = _parameters(node.args)
+        self._bindings = {
+            name: chain for name, chain in saved.items() if name not in parameters
+        }
         self.generic_visit(node)
         self._bindings = saved
 

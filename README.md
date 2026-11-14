@@ -21,8 +21,8 @@ App remote), T10b (provider migration bundle), T10c (local provider fan-out), T1
 provider fan-out), T10e (hosted provider service), T10f (webhook-triggered runs), T11a (Rust
 call-site location), T11b (Go call-site location), T11c (C# call-site location), T12a (Rust/Go
 receiver tracking), T12b (C#/Python/TS receiver tracking), T12c (annotated return-type inference),
-T12d (typed-parameter inference), T13a (deployable service), T13b (service resilience) and the
-`tenon check` /
+T12d (typed-parameter inference), T12e (cross-file signatures and closures), T13a (deployable
+service), T13b (service resilience) and the `tenon check` /
 `tenon fix` / `tenon provider migrate` / `tenon provider serve` / `tenon probe` / `tenon corpus` CLI
 are shipped.**
 `src/tenon/detect/` diffs two OpenAPI 3.x documents — and two MCP `tools/list` documents — into typed
@@ -149,8 +149,10 @@ TypeScript `const client = new StripeClient(...); client.charges.create(...)` ->
 roots the assigned receiver. T12d roots an annotated parameter inside its function/method body
 (`def create(client: stripe.Client)`, `function create(client: StripeClient)`,
 `fn create(client: &Client)`, `func create(client *stripe.Client)`,
-`Create(StripeClient client)`). An unannotated, wrong-return/parameter or cross-file helper stays
-unrooted. See each language's limits above.
+`Create(StripeClient client)`). T12e indexes annotated helper signatures across the same
+package/module/namespace (Go directory, C# directory, Python/TS/Rust imports) and lets a
+function/arrow/closure inherit the enclosing bindings; a duplicate name is ambiguous, and a helper
+imported from another package stays unrooted. See each language's limits above.
 
 ```python
 from tenon.detect import diff, load

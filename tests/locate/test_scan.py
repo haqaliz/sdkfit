@@ -46,6 +46,22 @@ def a_repo(tmp_path, source):
     return tmp_path
 
 
+def a_package(tmp_path, files):
+    for name, text in files.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return tmp_path
+
+
+def a_rooted(result, path):
+    return [
+        (item.symbol, item.chain)
+        for item in result.hits
+        if item.path == path and item.rooted
+    ]
+
+
 def a_visitor(text, receivers=None):
     tree = parse(text)
     roots, classes, class_paths = _bindings(tree, "stripe")
@@ -885,8 +901,8 @@ def test_a_typed_helper_roots_the_receiver_chain(tmp_path):
     )
 
 
-# Spec AC1: a helper defined in another file is not evidence.
-def test_a_cross_file_helper_is_not_evidence(tmp_path):
+# Spec AC1/AC5: a top-level module helper is indexed and roots the receiver.
+def test_a_top_level_module_helper_is_evidence(tmp_path):
     (tmp_path / "helpers.py").write_text(
         "import stripe\n"
         "\n"
@@ -910,13 +926,32 @@ def test_a_cross_file_helper_is_not_evidence(tmp_path):
             repo,
             "app.py",
             5,
+            8,
+            SiteShape.ATTRIBUTE,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        hit(
+            repo,
+            "app.py",
+            5,
             16,
             SiteShape.CALL,
             "create",
-            ("charges", "create"),
-            False,
+            ("Client", "charges", "create"),
+            True,
         ),
-        hit(repo, "app.py", 5, 23, SiteShape.KEYWORD, "amount", (), False),
+        hit(
+            repo,
+            "app.py",
+            5,
+            23,
+            SiteShape.KEYWORD,
+            "amount",
+            ("Client", "charges", "create"),
+            True,
+        ),
         hit(repo, "helpers.py", 3, 29, SiteShape.ATTRIBUTE, "Client", (), False),
         hit(repo, "helpers.py", 4, 19, SiteShape.CALL, "Client", ("Client",), True),
     )
@@ -1183,3 +1218,279 @@ def test_a_rebound_parameter_replaces_the_receiver(tmp_path):
             True,
         ),
     )
+
+
+# Phase 11: cross-file return types and closures.
+HELPER = "from stripe import Client\n\ndef make_client() -> Client:\n    ...\n"
+
+
+# Spec AC1: a relatively imported helper in another module roots the receiver.
+def test_a_relative_helper_import_roots_the_receiver(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/helpers.py": HELPER,
+            "pkg/billing.py": "from .helpers import make_client\n"
+            "\n"
+            "client = make_client()\n"
+            "client.charges.create(amount=100)\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert result.modules == ("pkg/billing.py", "pkg/helpers.py")
+    assert a_rooted(result, "pkg/billing.py") == [
+        ("charges", ("Client", "charges")),
+        ("create", ("Client", "charges", "create")),
+        ("amount", ("Client", "charges", "create")),
+    ]
+
+
+# Spec AC1: an absolutely imported helper in another module roots the receiver,
+# resolved through the helper's own imports.
+def test_an_absolute_helper_import_roots_the_receiver(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/helpers.py": "import stripe\n"
+            "\n"
+            "def make_client() -> stripe.Client:\n"
+            "    ...\n",
+            "pkg/billing.py": "from pkg.helpers import make_client\n"
+            "\n"
+            "client = make_client()\n"
+            "client.charges\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "pkg/billing.py") == [
+        ("charges", ("Client", "charges")),
+    ]
+
+
+# Spec AC2: a module attribute call through `import pkg.helpers` roots.
+def test_a_module_attribute_call_roots_the_receiver(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/helpers.py": HELPER,
+            "pkg/billing.py": "import pkg.helpers\n"
+            "\n"
+            "client = pkg.helpers.make_client()\n"
+            "client.charges\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "pkg/billing.py") == [
+        ("charges", ("Client", "charges")),
+    ]
+
+
+# Spec AC1/AC2: `from . import helpers` binds the indexed module itself.
+def test_a_package_module_import_roots_the_receiver(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/helpers.py": HELPER,
+            "pkg/billing.py": "from . import helpers\n"
+            "\n"
+            "client = helpers.make_client()\n"
+            "client.charges\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "pkg/billing.py") == [
+        ("charges", ("Client", "charges")),
+    ]
+
+
+# Spec AC3: a name defined twice in one module is ambiguous; its sibling stays.
+def test_a_duplicate_helper_in_one_module_is_not_evidence(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/helpers.py": "from stripe import Client\n"
+            "\n"
+            "def make_client() -> Client:\n"
+            "    ...\n"
+            "\n"
+            "def make_client() -> Client:\n"
+            "    ...\n"
+            "\n"
+            "def make_ledger() -> Client:\n"
+            "    ...\n",
+            "pkg/billing.py": "from .helpers import make_client, make_ledger\n"
+            "\n"
+            "client = make_client()\n"
+            "client.charges\n"
+            "ledger = make_ledger()\n"
+            "ledger.ledger\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "pkg/billing.py") == [
+        ("ledger", ("Client", "ledger")),
+    ]
+
+
+# Spec AC3: the same helper name in two modules resolves per import.
+def test_the_same_helper_name_in_two_modules_resolves_per_import(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/a.py": "from stripe import Client\n"
+            "\n"
+            "def make_client() -> Client:\n"
+            "    ...\n",
+            "pkg/b.py": "from stripe import CustomerClient\n"
+            "\n"
+            "def make_client() -> CustomerClient:\n"
+            "    ...\n",
+            "pkg/billing_a.py": "from .a import make_client\n"
+            "\n"
+            "client = make_client()\n"
+            "client.charges\n",
+            "pkg/billing_b.py": "from .b import make_client\n"
+            "\n"
+            "client = make_client()\n"
+            "client.charges\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "pkg/billing_a.py") == [
+        ("charges", ("Client", "charges")),
+    ]
+    assert a_rooted(result, "pkg/billing_b.py") == [
+        ("charges", ("CustomerClient", "charges")),
+    ]
+
+
+# Spec AC1: an unannotated cross-file helper is not evidence.
+def test_an_unannotated_cross_file_helper_is_not_evidence(tmp_path):
+    repo = a_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/helpers.py": "from stripe import Client\n"
+            "\n"
+            "def make_client():\n"
+            "    ...\n",
+            "pkg/billing.py": "from .helpers import make_client\n"
+            "\n"
+            "client = make_client()\n"
+            "client.charges\n",
+        },
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "pkg/billing.py") == []
+
+
+# Spec AC4: a nested def captures the enclosing typed parameter.
+def test_a_nested_function_captures_the_enclosing_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        "from stripe import Client\n"
+        "\n"
+        "def outer(client: Client):\n"
+        "    def inner():\n"
+        "        client.charges\n"
+        "    inner()\n",
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "app.py") == [("charges", ("Client", "charges"))]
+
+
+# Spec AC4: a lambda captures the enclosing receiver.
+def test_a_lambda_captures_the_enclosing_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        "from stripe import Client\n"
+        "\n"
+        "def outer():\n"
+        "    client = Client()\n"
+        "    run = lambda: client.charges\n",
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "app.py") == [
+        ("Client", ("Client",)),
+        ("charges", ("Client", "charges")),
+    ]
+
+
+# Spec AC4: a lambda's own parameter shadows the captured binding.
+def test_a_lambda_parameter_is_its_own(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        "from stripe import Client\n"
+        "\n"
+        "def outer(client: Client):\n"
+        "    run = lambda client: client.charges\n"
+        "    client.charges\n",
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "app.py") == [("charges", ("Client", "charges"))]
+
+
+# Spec AC4: a closure rebinding clears the inherited receiver only inside it.
+def test_a_closure_rebinding_clears_the_inherited_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        "from stripe import Client\n"
+        "\n"
+        "def outer(client: Client):\n"
+        "    def inner():\n"
+        "        client = build()\n"
+        "        client.charges\n"
+        "    client.charges\n",
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "app.py") == [("charges", ("Client", "charges"))]
+
+
+# Spec AC4: a top-level function starts a fresh local scope.
+def test_a_top_level_function_does_not_inherit_another_local(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        "from stripe import Client\n"
+        "\n"
+        "def make_client() -> Client:\n"
+        "    ...\n"
+        "\n"
+        "def first():\n"
+        "    client = make_client()\n"
+        "    client.charges\n"
+        "\n"
+        "def second():\n"
+        "    client.charges\n",
+    )
+
+    result = scan(repo, "stripe")
+
+    assert a_rooted(result, "app.py") == [("charges", ("Client", "charges"))]

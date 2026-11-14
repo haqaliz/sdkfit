@@ -70,9 +70,10 @@ tests/        offline; fixture repos and specs; no network, no model calls
   roots a client built from explicit evidence (`new`/constructor, annotation or configured factory)
   in all five languages, so `client.resource.method` is reported as `Type.resource.method`; T12c
   also roots a receiver from a same-file function/method's annotated return type, and T12d roots an
-  annotated parameter inside its function body. A method chain on an untracked receiver, macros,
-  re-exported crates, Go dot imports, C# `using static`/`dynamic`, reflection and multi-hop data flow
-  are not followed and produce no site, never a guess.
+  annotated parameter inside its function body; T12e resolves annotated helpers across the same
+  package/module/namespace and lets closures inherit the enclosing bindings. A method chain on an
+  untracked receiver, macros, re-exported crates, Go dot imports, C# `using static`/`dynamic`,
+  reflection and multi-hop data flow are not followed and produce no site, never a guess.
 - **Proof is a ladder, chosen by the user.** `--require
   TESTS_PASSED|CHARACTERIZED|REPLAYED|TYPES_BUILD_ONLY|UNVERIFIED`. The runner configures up to four
   stage commands (`build`, `characterize`, `replay`, `tests`), runs every baseline, applies the patch
@@ -269,8 +270,8 @@ test"` is just a user command.
 - Phase 3: T10a (GitHub App remote), T10b (provider migration bundle), T10c (local provider
   fan-out), T10d (installed provider fan-out), T10e (hosted provider service), T11a (Rust locator),
   T11b (Go locator) and T11c (C# locator) shipped; T12a (Rust/Go receiver tracking), T12b
-  (C#/Python/TS receiver tracking), T12c (annotated return-type inference) and T12d (typed-parameter
-  inference) shipped; T13a (deployable service) and T13b (resilience) shipped; T10f
-  (webhook-triggered runs) shipped. Cross-file/interprocedural receiver inference and a hardened
-  cloud deployment beyond Compose are not started. v0.1.0 was the first tagged release (2026-11-13);
-  v0.2.0 shipped 2026-11-14.
+  (C#/Python/TS receiver tracking), T12c (annotated return-type inference), T12d (typed-parameter
+  inference) and T12e (cross-file signatures and closures) shipped; T13a (deployable service) and
+  T13b (resilience) shipped; T10f (webhook-triggered runs) shipped. Repo-wide cross-package indexes
+  and a hardened cloud deployment beyond Compose are not started. v0.1.0 was the first tagged
+  release (2026-11-13); v0.2.0 shipped 2026-11-14.

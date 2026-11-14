@@ -21,9 +21,9 @@ _MEMBER_SCOPES = frozenset(
         "method_declaration",
         "constructor_declaration",
         "accessor_declaration",
-        "local_function_statement",
     }
 )
+_CLOSURES = frozenset({"local_function_statement", "lambda_expression"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +144,12 @@ def _type_chain(type_node: Node | None, roots: _Roots) -> tuple[str, ...] | None
     return None
 
 
+def _return_type(node: Node) -> Node | None:
+    """The declared return type of a method or local function."""
+    type_node = node.child_by_field_name("type")
+    return type_node if type_node is not None else node.child_by_field_name("returns")
+
+
 def _returns(tree: Tree, roots: _Roots) -> dict[str, tuple[str, ...]]:
     """Same-file method/local function name -> SDK return chain.
 
@@ -157,15 +163,44 @@ def _returns(tree: Tree, roots: _Roots) -> dict[str, tuple[str, ...]]:
         name = node.child_by_field_name("name")
         if name is None:
             continue
-        type_node = node.child_by_field_name("type")
-        if type_node is None:
-            type_node = node.child_by_field_name("returns")
-        chain = _type_chain(type_node, roots)
+        chain = _type_chain(_return_type(node), roots)
         if chain is None:
             found.pop(_text(name), None)
         else:
             found[_text(name)] = chain
     return found
+
+
+def _package_returns(
+    modules: list[tuple[_Module, _Roots]],
+) -> tuple[dict[str, dict[str, tuple[str, ...]]], dict[str, set[str]]]:
+    """Directory -> method name -> SDK return chain, plus the ambiguous names.
+
+    Each chain is resolved in its defining file's using context. A name with
+    more than one top-level definition in the directory is ambiguous and dropped.
+    """
+    definitions: dict[str, dict[str, list[tuple[str, ...] | None]]] = {}
+    for module, roots in modules:
+        names = definitions.setdefault(module.rel.rpartition("/")[0], {})
+        for node in _walk(module.tree.root_node):
+            if node.type != "method_declaration":
+                continue
+            name = node.child_by_field_name("name")
+            if name is not None:
+                names.setdefault(_text(name), []).append(
+                    _type_chain(_return_type(node), roots)
+                )
+    returns: dict[str, dict[str, tuple[str, ...]]] = {}
+    ambiguous: dict[str, set[str]] = {}
+    for directory, names in definitions.items():
+        returns[directory] = {}
+        ambiguous[directory] = set()
+        for name, chains in names.items():
+            if len(chains) > 1:
+                ambiguous[directory].add(name)
+            elif chains[0] is not None:
+                returns[directory][name] = chains[0]
+    return returns, ambiguous
 
 
 def _usings(tree: Tree, sdk_package: str) -> tuple[_Roots, bool]:
@@ -313,11 +348,17 @@ class _Visitor:
             if mapped is not None:
                 return mapped, ()
             function = node.child_by_field_name("function")
-            if function is not None and function.type == "identifier":
-                annotated = self._returns.get(_text(function))
-                if annotated is not None:
-                    return annotated, ()
-            return None, ()
+            segments = _segments(function) if function is not None else None
+            if segments is None:
+                return None, ()
+            # Spec AC1: `MakeClient()` and `Helpers.MakeClient()` name a
+            # same-package helper; a longer or bound receiver does not.
+            if len(segments) > 2 or (
+                len(segments) == 2 and segments[0] in self._bindings
+            ):
+                return None, ()
+            annotated = self._returns.get(segments[-1])
+            return (annotated, ()) if annotated is not None else (None, ())
         return None, ()
 
     def _bind(
@@ -492,6 +533,13 @@ class _Visitor:
             self._parameters(node)
             self._visit_children(node)
             self._bindings = saved
+        elif node.type in _CLOSURES:
+            saved = self._bindings
+            # Spec AC3: a closure inherits the enclosing receiver/parameter bindings.
+            self._bindings = dict(self._bindings)
+            self._parameters(node)
+            self._visit_children(node)
+            self._bindings = saved
         elif node.type == "variable_declaration":
             self._declaration(node)
         elif node.type == "assignment_expression":
@@ -512,21 +560,38 @@ def scan_csharp(
     receivers: Mapping[str, str] | None = None,
 ) -> ScanResult:
     """Parse ``root`` read-only and report SDK-rooted C# evidence."""
-    modules: list[str] = []
-    hits: list[Hit] = []
+    parsed = []
     for module in _read(Path(root)):
         roots, static_import = _usings(module.tree, sdk_package)
-        if not (
+        parsed.append((module, roots, static_import))
+    # Spec AC1/S1: index every directory before the per-file receiver pass.
+    returns, ambiguous = _package_returns(
+        [(module, roots) for module, roots, _ in parsed]
+    )
+    modules: list[str] = []
+    hits: list[Hit] = []
+    for module, roots, static_import in parsed:
+        directory = module.rel.rpartition("/")[0]
+        ambiguous_names = ambiguous.get(directory, set())
+        same_file = {
+            name: chain
+            for name, chain in _returns(module.tree, roots).items()
+            if name not in ambiguous_names
+        }
+        visitor = _Visitor(
+            module.source,
+            roots,
+            receivers or {},
+            {**returns.get(directory, {}), **same_file},
+        )
+        visitor.visit(module.tree.root_node)
+        if (
             roots.namespace_import
             or roots.aliases
             or static_import
             or _mentions_rooted_type(module.tree, roots)
+            or any(hit.rooted for hit in visitor.hits)
         ):
-            continue
-        visitor = _Visitor(
-            module.source, roots, receivers or {}, _returns(module.tree, roots)
-        )
-        visitor.visit(module.tree.root_node)
-        modules.append(module.rel)
-        hits.extend(visitor.hits)
+            modules.append(module.rel)
+            hits.extend(visitor.hits)
     return ScanResult(modules=tuple(modules), hits=tuple(hits))

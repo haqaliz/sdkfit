@@ -1459,3 +1459,466 @@ def test_a_rebound_parameter_replaces_the_receiver(tmp_path):
             True,
         ),
     )
+
+
+# Phase 12: cross-file signatures and closures.
+# Spec AC1: `mod` files index their signatures; a crate `use` roots the call.
+def test_a_module_import_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.modules == ("src/helpers.rs", "src/main.rs")
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            7,
+            5,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            7,
+            5,
+            SiteShape.CALL,
+            "create",
+            ("Client", "charges", "create"),
+            True,
+        ),
+    )
+
+
+# Spec AC1: `helpers/mod.rs` resolves; the return alias is the defining file's.
+def test_a_module_mod_file_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers/mod.rs": "use stripe::Client as C;\n"
+            "\n"
+            "pub fn make_client() -> C {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            7,
+            5,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            7,
+            5,
+            SiteShape.CALL,
+            "create",
+            ("Client", "charges", "create"),
+            True,
+        ),
+    )
+
+
+# Spec AC1: a `crate::` path call roots the receiver.
+def test_a_crate_path_call_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = crate::helpers::make_client();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            4,
+            18,
+            SiteShape.CALL,
+            "make_client",
+            ("helpers", "make_client"),
+            False,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            5,
+            5,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            5,
+            5,
+            SiteShape.CALL,
+            "create",
+            ("Client", "charges", "create"),
+            True,
+        ),
+    )
+
+
+# Spec AC1: a path call through a declared module roots the receiver.
+def test_a_module_path_call_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = helpers::make_client();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            4,
+            18,
+            SiteShape.CALL,
+            "make_client",
+            ("helpers", "make_client"),
+            False,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            5,
+            5,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            5,
+            5,
+            SiteShape.CALL,
+            "create",
+            ("Client", "charges", "create"),
+            True,
+        ),
+    )
+
+
+# Spec AC1: an unannotated helper in another module is no evidence.
+def test_an_unannotated_module_helper_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "pub fn make_client() {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    assert scan_rust(repo, "stripe").hits == ()
+
+
+# Spec AC2: a name defined twice in one module is ambiguous, never evidence.
+def test_a_duplicate_name_in_one_module_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    assert scan_rust(repo, "stripe").hits == ()
+
+
+# Spec AC2: the same name in two modules resolves per path.
+def test_the_same_name_in_two_modules_resolves_by_path(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/other.rs": "use stripe::Customer;\n"
+            "\n"
+            "pub fn make_client() -> Customer {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "mod other;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = helpers::make_client();\n"
+            "    client.charges().create(&params);\n"
+            "    let customer = other::make_client();\n"
+            "    customer.refunds().list(&params);\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            5,
+            18,
+            SiteShape.CALL,
+            "make_client",
+            ("helpers", "make_client"),
+            False,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            6,
+            5,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            6,
+            5,
+            SiteShape.CALL,
+            "create",
+            ("Client", "charges", "create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            7,
+            20,
+            SiteShape.CALL,
+            "make_client",
+            ("other", "make_client"),
+            False,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            8,
+            5,
+            SiteShape.CALL,
+            "list",
+            ("Customer", "refunds", "list"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            8,
+            5,
+            SiteShape.CALL,
+            "refunds",
+            ("Customer", "refunds"),
+            True,
+        ),
+    )
+
+
+# Spec AC3: a closure captures the enclosing cross-file receiver.
+def test_a_closure_captures_the_cross_file_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    let go = || {\n"
+            "        client.charges().create(&params);\n"
+            "    };\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            8,
+            9,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "src/main.rs",
+            8,
+            9,
+            SiteShape.CALL,
+            "create",
+            ("Client", "charges", "create"),
+            True,
+        ),
+    )
+
+
+# Spec AC3: a nested `fn` does not capture the enclosing receiver.
+def test_a_nested_function_does_not_capture_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    fn inner() {\n"
+            "        client.charges().create(&params);\n"
+            "    }\n"
+            "    client.charges();\n"
+            "}\n",
+        },
+    )
+
+    result = scan_rust(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "src/main.rs",
+            10,
+            5,
+            SiteShape.CALL,
+            "charges",
+            ("Client", "charges"),
+            True,
+        ),
+    )
+
+
+# Spec AC3: a local assignment clears the cross-file receiver.
+def test_a_rebinding_clears_the_cross_file_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    let client = build();\n"
+            "    client.charges().create(&params);\n"
+            "}\n",
+        },
+    )
+
+    assert scan_rust(repo, "stripe").hits == ()

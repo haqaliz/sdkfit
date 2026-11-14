@@ -210,27 +210,34 @@ def _result_chain(
     return _type_chain(result, roots)
 
 
-def _returns(
-    tree: Tree, roots: dict[str, tuple[str, ...]]
-) -> dict[str, tuple[str, ...]]:
-    """Same-file function name -> SDK result chain from its signature.
+def _package_returns(
+    modules: list[tuple[_Module, dict[str, tuple[str, ...]]]],
+) -> dict[str, dict[str, tuple[str, ...]]]:
+    """Package directory -> function name -> SDK result chain.
 
-    A named result, ``error`` or non-SDK first result is no evidence; a later
-    definition of the same name replaces or clears the map.
+    Each chain is resolved in its defining file's import context. A name with
+    more than one definition in the package is ambiguous and dropped.
     """
-    found: dict[str, tuple[str, ...]] = {}
-    for node in _walk(tree.root_node):
-        if node.type != "function_declaration":
-            continue
-        name = node.child_by_field_name("name")
-        if name is None:
-            continue
-        chain = _result_chain(node.child_by_field_name("result"), roots)
-        if chain is None:
-            found.pop(_text(name), None)
-        else:
-            found[_text(name)] = chain
-    return found
+    definitions: dict[str, dict[str, list[tuple[str, ...] | None]]] = {}
+    for module, roots in modules:
+        directory = module.rel.rpartition("/")[0]
+        names = definitions.setdefault(directory, {})
+        for node in _walk(module.tree.root_node):
+            if node.type != "function_declaration":
+                continue
+            name = node.child_by_field_name("name")
+            if name is None:
+                continue
+            chain = _result_chain(node.child_by_field_name("result"), roots)
+            names.setdefault(_text(name), []).append(chain)
+    return {
+        directory: {
+            name: chains[0]
+            for name, chains in names.items()
+            if len(chains) == 1 and chains[0] is not None
+        }
+        for directory, names in definitions.items()
+    }
 
 
 class _Visitor:
@@ -522,14 +529,17 @@ class _Visitor:
             self.visit(function)
 
     def visit(self, node: Node) -> None:
-        if node.type in {
-            "function_declaration",
-            "method_declaration",
-            "func_literal",
-        }:
+        if node.type in {"function_declaration", "method_declaration"}:
             saved = self._bindings
             self._bindings = {}
             # Spec AC2: an annotated parameter is the body's initial receiver.
+            self._parameters(node)
+            self._visit_children(node)
+            self._bindings = saved
+        elif node.type == "func_literal":
+            saved = self._bindings
+            # Spec AC3: a closure inherits the enclosing receiver/parameter bindings.
+            self._bindings = dict(self._bindings)
             self._parameters(node)
             self._visit_children(node)
             self._bindings = saved
@@ -556,14 +566,21 @@ def scan_go(
     receivers: Mapping[str, str] | None = None,
 ) -> ScanResult:
     """Parse ``root`` read-only and report SDK-rooted Go evidence."""
-    modules: list[str] = []
-    hits: list[Hit] = []
+    parsed = []
     for module in _read(Path(root)):
         roots, sdk_imported = _imports(module.tree, sdk_package, package_name)
+        parsed.append((module, roots, sdk_imported))
+    returns = _package_returns([(module, roots) for module, roots, _ in parsed])
+    modules: list[str] = []
+    hits: list[Hit] = []
+    for module, roots, sdk_imported in parsed:
         if not sdk_imported:
             continue
         visitor = _Visitor(
-            module.source, roots, receivers or {}, _returns(module.tree, roots)
+            module.source,
+            roots,
+            receivers or {},
+            returns[module.rel.rpartition("/")[0]],
         )
         visitor.visit(module.tree.root_node)
         modules.append(module.rel)

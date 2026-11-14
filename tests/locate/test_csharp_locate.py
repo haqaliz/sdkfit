@@ -533,3 +533,39 @@ def test_a_typed_parameter_resolves_the_operation(tmp_path):
     ] == [("main.cs", 7, 9, SiteShape.CALL, "Create")]
     assert result.ambiguous == ()
     assert result.reason is None
+
+
+# Spec AC4: a helper in another file resolves the mapped operation.
+def test_a_cross_file_helper_resolves_the_operation(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.cs": "using Stripe;\n"
+            "\n"
+            "static class Helpers\n"
+            "{\n"
+            "    public static StripeClient MakeClient() => new StripeClient();\n"
+            "}\n",
+            "billing.cs": "class Billing\n"
+            "{\n"
+            "    void Run()\n"
+            "    {\n"
+            "        var client = Helpers.MakeClient();\n"
+            "        client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n",
+        },
+    )
+    config = CSharpLocateConfig(
+        sdk_package=ROOT,
+        operations={"POST /v1/charges": "StripeClient.Charges.Create"},
+    )
+
+    result = locate_csharp(a_removed_endpoint(), repo, config)
+
+    assert [
+        (site.path, site.line, site.column, site.shape, site.symbol)
+        for site in result.certain
+    ] == [("billing.cs", 6, 9, SiteShape.CALL, "Create")]
+    assert result.ambiguous == ()
+    assert result.reason is None

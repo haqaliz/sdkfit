@@ -81,6 +81,14 @@ def a_visitor(text, receivers=None, sdk_package="stripe"):
     return visitor
 
 
+def a_repo(tmp_path, files):
+    for rel, text in files.items():
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return tmp_path
+
+
 # Phase 1: discovery, grammar selection and skipped files.
 # Spec AC1: all eight extensions parse; ignored directories and broken files skip.
 def test_scan_ts_discovers_modules_that_import_the_sdk():
@@ -1351,8 +1359,8 @@ def test_a_typed_helper_roots_the_receiver_chain(tmp_path):
     )
 
 
-# Spec AC2: a helper defined in another file is not evidence.
-def test_a_cross_file_helper_is_not_evidence(tmp_path):
+# Spec AC1: a helper imported from another file is evidence.
+def test_a_cross_file_helper_is_evidence(tmp_path):
     (tmp_path / "helpers.ts").write_text(
         'import { Client, StripeClient } from "stripe";\n'
         "\n"
@@ -1372,8 +1380,9 @@ def test_a_cross_file_helper_is_not_evidence(tmp_path):
     result = scan_ts(tmp_path, "stripe")
 
     assert result.hits == (
-        a_hit(tmp_path, "app.ts", 4, 16, SiteShape.CALL, "create", ("charges", "create"), False),
-        a_hit(tmp_path, "app.ts", 4, 25, SiteShape.KEYWORD, "amount", (), False),
+        a_hit(tmp_path, "app.ts", 4, 8, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+        a_hit(tmp_path, "app.ts", 4, 16, SiteShape.CALL, "create", ("StripeClient", "charges", "create"), True),
+        a_hit(tmp_path, "app.ts", 4, 25, SiteShape.KEYWORD, "amount", ("StripeClient", "charges", "create"), True),
         a_hit(tmp_path, "helpers.ts", 4, 14, SiteShape.CALL, "Client", ("Client",), True),
     )
 
@@ -1546,4 +1555,313 @@ def test_a_rebound_parameter_replaces_the_receiver(tmp_path):
     assert result.hits == (
         a_hit(tmp_path, "app.ts", 4, 16, SiteShape.CALL, "CustomerClient", ("CustomerClient",), True),
         a_hit(tmp_path, "app.ts", 5, 10, SiteShape.ATTRIBUTE, "charges", ("CustomerClient", "charges"), True),
+    )
+
+
+# Phase 11: cross-file signatures and closures.
+# Spec AC1: a default import carries the helper's indexed return type.
+def test_a_default_import_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.ts": (
+                'import { Client, StripeClient } from "stripe";\n'
+                "\n"
+                "export default function makeClient(): StripeClient {\n"
+                "  return new Client();\n"
+                "}\n"
+            ),
+            "billing.ts": (
+                'import makeClient from "./helpers";\n'
+                "\n"
+                "const client = makeClient();\n"
+                "client.charges;\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "billing.ts", 4, 8, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+        a_hit(repo, "helpers.ts", 4, 14, SiteShape.CALL, "Client", ("Client",), True),
+    )
+
+
+# Spec AC1: a namespace import resolves a member call to the module index.
+def test_a_namespace_import_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.ts": (
+                'import { Client, StripeClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new Client();\n"
+                "}\n"
+            ),
+            "billing.ts": (
+                'import * as helpers from "./helpers";\n'
+                "\n"
+                "const client = helpers.makeClient();\n"
+                "client.charges;\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "billing.ts", 3, 24, SiteShape.CALL, "makeClient", ("makeClient",), False),
+        a_hit(repo, "billing.ts", 4, 8, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+        a_hit(repo, "helpers.ts", 4, 14, SiteShape.CALL, "Client", ("Client",), True),
+    )
+
+
+# Spec AC1: a parent-relative import resolves to the same-package file.
+def test_a_parent_relative_import_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "lib/helpers.ts": (
+                'import { StripeClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new StripeClient();\n"
+                "}\n"
+            ),
+            "src/billing.ts": (
+                'import { makeClient } from "../lib/helpers";\n'
+                "\n"
+                "const client = makeClient();\n"
+                "client.charges;\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "lib/helpers.ts", 4, 14, SiteShape.CALL, "StripeClient", ("StripeClient",), True),
+        a_hit(repo, "src/billing.ts", 4, 8, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+    )
+
+
+# Spec AC2: a relative directory import resolves to its index module.
+def test_an_index_module_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers/index.ts": (
+                'import { Client, StripeClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new Client();\n"
+                "}\n"
+            ),
+            "billing.ts": (
+                'import { makeClient } from "./helpers";\n'
+                "\n"
+                "const client = makeClient();\n"
+                "client.charges;\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "billing.ts", 4, 8, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+        a_hit(repo, "helpers/index.ts", 4, 14, SiteShape.CALL, "Client", ("Client",), True),
+    )
+
+
+# Spec AC2: an unresolved relative import is not evidence.
+def test_an_unresolved_relative_import_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "app.ts": (
+                'import { Client } from "stripe";\n'
+                'import { makeClient } from "./missing";\n'
+                "\n"
+                "const client = makeClient();\n"
+                "client.charges.create({ amount: 1 });\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "app.ts", 5, 16, SiteShape.CALL, "create", ("charges", "create"), False),
+        a_hit(repo, "app.ts", 5, 25, SiteShape.KEYWORD, "amount", (), False),
+    )
+
+
+# Spec AC3: a name defined twice in one module is ambiguous, never evidence.
+def test_a_duplicate_name_in_one_module_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.ts": (
+                'import { Client, StripeClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new Client();\n"
+                "}\n"
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new Client();\n"
+                "}\n"
+            ),
+            "billing.ts": (
+                'import { makeClient } from "./helpers";\n'
+                "\n"
+                "const client = makeClient();\n"
+                "client.charges;\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "billing.ts", 4, 8, SiteShape.ATTRIBUTE, "charges", (), False),
+        a_hit(repo, "helpers.ts", 4, 14, SiteShape.CALL, "Client", ("Client",), True),
+        a_hit(repo, "helpers.ts", 8, 14, SiteShape.CALL, "Client", ("Client",), True),
+    )
+
+
+# Spec AC3: the same name in different modules resolves per import.
+def test_the_same_name_in_two_modules_resolves_per_import(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.ts": (
+                'import { Client, StripeClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new Client();\n"
+                "}\n"
+            ),
+            "other.ts": (
+                'import { CustomerClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): CustomerClient {\n"
+                "  return new CustomerClient();\n"
+                "}\n"
+            ),
+            "billing.ts": (
+                'import { makeClient } from "./helpers";\n'
+                'import { makeClient as makeOther } from "./other";\n'
+                "\n"
+                "const client = makeClient();\n"
+                "client.charges;\n"
+                "\n"
+                "const other = makeOther();\n"
+                "other.charges;\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "billing.ts", 5, 8, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+        a_hit(repo, "billing.ts", 8, 7, SiteShape.ATTRIBUTE, "charges", ("CustomerClient", "charges"), True),
+        a_hit(repo, "helpers.ts", 4, 14, SiteShape.CALL, "Client", ("Client",), True),
+        a_hit(repo, "other.ts", 4, 14, SiteShape.CALL, "CustomerClient", ("CustomerClient",), True),
+    )
+
+
+# Spec AC4: a nested function/arrow captures the enclosing typed parameter.
+def test_a_nested_function_captures_the_enclosing_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "app.ts": (
+                'import { Client } from "stripe";\n'
+                "\n"
+                "function outer(client: Client) {\n"
+                "  function inner() {\n"
+                "    client.charges.create({ amount: 1 });\n"
+                "  }\n"
+                "  const run = () => {\n"
+                "    client.charges;\n"
+                "  };\n"
+                "  client.charges;\n"
+                "}\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "app.ts", 5, 12, SiteShape.ATTRIBUTE, "charges", ("Client", "charges"), True),
+        a_hit(repo, "app.ts", 5, 20, SiteShape.CALL, "create", ("Client", "charges", "create"), True),
+        a_hit(repo, "app.ts", 5, 29, SiteShape.KEYWORD, "amount", ("Client", "charges", "create"), True),
+        a_hit(repo, "app.ts", 8, 12, SiteShape.ATTRIBUTE, "charges", ("Client", "charges"), True),
+        a_hit(repo, "app.ts", 10, 10, SiteShape.ATTRIBUTE, "charges", ("Client", "charges"), True),
+    )
+
+
+# Spec AC4: a nested arrow captures a receiver bound from an imported helper.
+def test_a_nested_arrow_captures_a_cross_file_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.ts": (
+                'import { StripeClient } from "stripe";\n'
+                "\n"
+                "export function makeClient(): StripeClient {\n"
+                "  return new StripeClient();\n"
+                "}\n"
+            ),
+            "billing.ts": (
+                'import { makeClient } from "./helpers";\n'
+                "\n"
+                "function outer() {\n"
+                "  const client = makeClient();\n"
+                "  const run = () => {\n"
+                "    client.charges;\n"
+                "  };\n"
+                "}\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "billing.ts", 6, 12, SiteShape.ATTRIBUTE, "charges", ("StripeClient", "charges"), True),
+        a_hit(repo, "helpers.ts", 4, 14, SiteShape.CALL, "StripeClient", ("StripeClient",), True),
+    )
+
+
+# Spec AC4: a local assignment inside a nested function clears, then restores.
+def test_a_nested_rebinding_clears_then_restores_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "app.ts": (
+                'import { Client } from "stripe";\n'
+                "\n"
+                "function outer(client: Client) {\n"
+                "  function inner() {\n"
+                "    client = build();\n"
+                "    client.charges;\n"
+                "  }\n"
+                "  client.charges;\n"
+                "}\n"
+            ),
+        },
+    )
+
+    result = scan_ts(repo, "stripe")
+
+    assert result.hits == (
+        a_hit(repo, "app.ts", 6, 12, SiteShape.ATTRIBUTE, "charges", (), False),
+        a_hit(repo, "app.ts", 8, 10, SiteShape.ATTRIBUTE, "charges", ("Client", "charges"), True),
     )

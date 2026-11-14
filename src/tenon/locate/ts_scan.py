@@ -19,7 +19,7 @@ from tree_sitter import Language, Node, Parser, Tree
 from .result import SiteShape
 from .scan import Dynamic, DynamicKind, Hit, ScanResult, _Source, _column
 
-_EXTENSIONS = (".ts", ".mts", ".cts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
+_EXTENSIONS = (".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs")
 _SKIP_DIRECTORIES = frozenset(
     {
         "node_modules",
@@ -569,24 +569,33 @@ def _returns(
     roots: dict[str, tuple[str, ...]],
     sdk_parts: tuple[str, ...],
 ) -> dict[str, tuple[str, ...]]:
-    """Same-file function name -> SDK return chain from its annotation.
+    """Module function name -> SDK return chain from its annotation.
 
-    A missing, ``any``, generic or non-SDK return type is no evidence; a later
-    definition of the same name replaces or clears the map.
+    A missing, ``any``, generic or non-SDK return type is no evidence; a name
+    defined more than once in the module is ambiguous and dropped.
     """
-    events: list[tuple[int, str, tuple[str, ...] | None]] = []
+    definitions: dict[str, list[tuple[str, ...] | None]] = {}
     for child in _walk(node):
         if child.type in _FUNCTION_SCOPES:
+            chain = _annotation_chain(
+                child.child_by_field_name("return_type"), roots, sdk_parts
+            )
+            parent = child.parent
+            # shortcut: only an inline default function is indexed;
+            # `export default name` stays unindexed until a fixture needs it.
+            if (
+                parent is not None
+                and parent.type == "export_statement"
+                and any(item.type == "default" for item in parent.children)
+            ):
+                definitions.setdefault("default", []).append(chain)
             name = child.child_by_field_name("name")
             if name is None or name.type not in {
                 "identifier",
                 "property_identifier",
             }:
                 continue
-            chain = _annotation_chain(
-                child.child_by_field_name("return_type"), roots, sdk_parts
-            )
-            events.append((child.start_byte, _text(name), chain))
+            definitions.setdefault(_text(name), []).append(chain)
         elif child.type == "variable_declarator":
             value = _unwrap(child.child_by_field_name("value"))
             if value is None or value.type not in _FUNCTION_SCOPES:
@@ -597,14 +606,12 @@ def _returns(
             chain = _annotation_chain(
                 value.child_by_field_name("return_type"), roots, sdk_parts
             )
-            events.append((child.start_byte, _text(name), chain))
-    found: dict[str, tuple[str, ...]] = {}
-    for _, name, chain in sorted(events, key=lambda event: event[0]):
-        if chain is None:
-            found.pop(name, None)
-        else:
-            found[name] = chain
-    return found
+            definitions.setdefault(_text(name), []).append(chain)
+    return {
+        name: chains[0]
+        for name, chains in definitions.items()
+        if len(chains) == 1 and chains[0] is not None
+    }
 
 
 def _resolve_relative(
@@ -652,6 +659,72 @@ def _reachable(modules: list[_Module], sdk_package: str) -> list[_Module]:
     return [by_rel[rel] for rel in sorted(seen)]
 
 
+@dataclass(frozen=True, slots=True)
+class _Imported:
+    """The cross-file functions and module namespaces one module imports."""
+
+    functions: Mapping[str, tuple[str, ...]]
+    namespaces: Mapping[str, Mapping[str, tuple[str, ...]]]
+
+
+def _imported(
+    module: _Module,
+    returns: Mapping[str, Mapping[str, tuple[str, ...]]],
+    files: set[str],
+) -> _Imported:
+    """Resolve a file's relative imports against the indexed modules.
+
+    Spec AC1/AC2: only a resolved same-package import is evidence; the named,
+    default and namespace forms map to the defining module's return chains.
+    """
+    # shortcut: ES imports only; a relative require is reachability-only.
+    functions: dict[str, tuple[str, ...]] = {}
+    namespaces: dict[str, Mapping[str, tuple[str, ...]]] = {}
+    for node in module.tree.root_node.named_children:
+        if node.type != "import_statement" or _type_only(node):
+            continue
+        specifier = _import_source(node)
+        if specifier is None or not specifier.startswith("."):
+            continue
+        target = _resolve_relative(module.rel, specifier, files)
+        if target is None:
+            continue
+        index = returns.get(target, {})
+        for clause in node.named_children:
+            if clause.type != "import_clause":
+                continue
+            for child in clause.named_children:
+                if child.type == "identifier":
+                    chain = index.get("default")
+                    if chain is not None:
+                        functions[_text(child)] = chain
+                elif child.type == "namespace_import":
+                    identifier = next(
+                        (
+                            item
+                            for item in child.named_children
+                            if item.type == "identifier"
+                        ),
+                        None,
+                    )
+                    if identifier is not None:
+                        namespaces[_text(identifier)] = index
+                elif child.type == "named_imports":
+                    for spec in child.named_children:
+                        if spec.type != "import_specifier" or _type_only(spec):
+                            continue
+                        name_node = spec.child_by_field_name("name")
+                        if name_node is None:
+                            continue
+                        name = _text(name_node)
+                        chain = index.get("default" if name == "default" else name)
+                        if chain is None:
+                            continue
+                        alias = spec.child_by_field_name("alias")
+                        functions[_text(alias) if alias is not None else name] = chain
+    return _Imported(functions, namespaces)
+
+
 class _Visitor:
     """Emit hits for the four shapes and dynamics for the opaque ones."""
 
@@ -662,14 +735,17 @@ class _Visitor:
         roots: dict[str, tuple[str, ...]],
         classes: set[str],
         receivers: Mapping[str, str] | None = None,
+        imported: _Imported | None = None,
+        returns: Mapping[str, tuple[str, ...]] | None = None,
     ) -> None:
         self._source = source
         self._sdk_parts = tuple(sdk_package.split("/"))
         self._roots = roots
         self._classes = classes
         self._receivers = receivers or {}
+        self._imported = imported or _Imported({}, {})
         self._bindings: dict[str, tuple[str, ...]] = {}
-        self._returns: dict[str, tuple[str, ...]] = {}
+        self._returns: dict[str, tuple[str, ...]] = dict(returns or {})
         self._callee = 0
         self.hits: list[Hit] = []
         self.dynamics: list[Dynamic] = []
@@ -718,8 +794,18 @@ class _Visitor:
                 return mapped
             if function is not None and function.type == "identifier":
                 annotated = self._returns.get(_text(function))
+                if annotated is None:
+                    annotated = self._imported.functions.get(_text(function))
                 if annotated is not None:
                     return annotated
+            # Spec AC1: a namespace member call resolves to the module index.
+            if function is not None and function.type == "member_expression":
+                root, tail = _parts(function)
+                if root is not None and len(tail) == 1:
+                    module = self._imported.namespaces.get(root)
+                    annotated = module.get(tail[0]) if module is not None else None
+                    if annotated is not None:
+                        return annotated
         return None
 
     def _bind_receiver(self, name: str, chain: tuple[str, ...] | None) -> None:
@@ -972,7 +1058,7 @@ class _Visitor:
     def visit(self, node: Node | None) -> None:
         if node is None:
             return
-        if node.type == "program":
+        if node.type == "program" and not self._returns:
             # Spec AC2: the same-file signatures are known before the bindings.
             self._returns = _returns(node, self._roots, self._sdk_parts)
         if node.type in _FUNCTION_SCOPES:
@@ -1001,19 +1087,37 @@ def scan_ts(
     """Parse ``root`` read-only and report SDK-rooted TS/JS evidence."""
     modules = _read(Path(root))
     reachable = _reachable(modules, sdk_package)
-    hits: list[Hit] = []
-    dynamics: list[Dynamic] = []
+    sdk_parts = tuple(sdk_package.split("/"))
+    files = {module.rel for module in modules}
+    # Spec AC1/S1: index each module's resolved signatures before the pass.
+    prepared = []
     for module in reachable:
         roots, classes = _bindings(module.tree, sdk_package)
         alias_roots, class_aliases, alias_dynamics = _aliases(
             module.tree, roots, classes, sdk_package, module.source
         )
+        merged = {**roots, **alias_roots}
+        prepared.append(
+            (
+                module,
+                merged,
+                classes | class_aliases,
+                alias_dynamics,
+                _returns(module.tree.root_node, merged, sdk_parts),
+            )
+        )
+    index = {module.rel: returns for module, _, _, _, returns in prepared}
+    hits: list[Hit] = []
+    dynamics: list[Dynamic] = []
+    for module, roots, classes, alias_dynamics, returns in prepared:
         visitor = _Visitor(
             module.source,
             sdk_package,
-            {**roots, **alias_roots},
-            classes | class_aliases,
+            roots,
+            classes,
             receivers or {},
+            _imported(module, index, files),
+            returns,
         )
         visitor.visit(module.tree.root_node)
         hits.extend(visitor.hits)

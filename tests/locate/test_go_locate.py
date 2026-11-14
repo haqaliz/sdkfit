@@ -454,3 +454,41 @@ def test_a_typed_parameter_resolves_the_operation(tmp_path):
     ] == [("main.go", 6, 5, SiteShape.CALL, "New")]
     assert result.ambiguous == ()
     assert result.reason is None
+
+
+# Spec AC1/AC4: a helper in another file of the package resolves the operation.
+def test_a_cross_file_helper_resolves_the_operation(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.go": "package main\n"
+            "\n"
+            f'import s "{ROOT}"\n'
+            "\n"
+            "func newClient() *s.Client {\n"
+            "    return nil\n"
+            "}\n",
+            "billing.go": "package main\n"
+            "\n"
+            f'import "{ROOT}"\n'
+            "\n"
+            "func main() {\n"
+            "    client := newClient()\n"
+            "    client.Charges.New(params)\n"
+            "}\n",
+        },
+    )
+    config = GoLocateConfig(
+        sdk_package=ROOT,
+        package_name="stripe",
+        operations={"POST /v1/charges": "Client.Charges.New"},
+    )
+
+    result = locate_go(a_removed_endpoint(), repo, config)
+
+    assert [
+        (site.path, site.line, site.column, site.shape, site.symbol)
+        for site in result.certain
+    ] == [("billing.go", 7, 5, SiteShape.CALL, "New")]
+    assert result.ambiguous == ()
+    assert result.reason is None

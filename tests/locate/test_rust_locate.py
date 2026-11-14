@@ -408,3 +408,34 @@ def test_a_typed_parameter_resolves_the_operation(tmp_path):
     ] == [("main.rs", 4, 5, SiteShape.CALL, "create")]
     assert result.ambiguous == ()
     assert result.reason is None
+
+
+# Spec AC4: an imported cross-file helper resolves a component.
+def test_a_cross_file_helper_resolves_a_component(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "src/helpers.rs": "use stripe::Client;\n"
+            "\n"
+            "pub fn make_client() -> Client {\n"
+            "    unimplemented!()\n"
+            "}\n",
+            "src/main.rs": "mod helpers;\n"
+            "\n"
+            "use crate::helpers::make_client;\n"
+            "\n"
+            "fn main() {\n"
+            "    let client = make_client();\n"
+            "    client.amount;\n"
+            "}\n",
+        },
+    )
+
+    result = locate_rust(a_component_rename(), repo, STRIPE)
+
+    assert [
+        (site.path, site.line, site.column, site.shape, site.symbol)
+        for site in result.certain
+    ] == [("src/main.rs", 7, 12, SiteShape.ATTRIBUTE, "amount")]
+    assert result.ambiguous == ()
+    assert result.reason is None

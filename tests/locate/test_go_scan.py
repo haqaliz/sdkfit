@@ -1399,19 +1399,19 @@ def test_an_error_first_result_is_not_evidence(tmp_path):
     assert a_attributes(result) == []
 
 
-# Spec AC2: a helper defined in another file is no evidence.
-def test_a_cross_file_helper_is_not_evidence(tmp_path):
+# Spec AC1: a helper in another file of the package roots the receiver.
+def test_a_cross_file_helper_roots_the_receiver(tmp_path):
     repo = a_repo(
         tmp_path,
         {
-            "helper.go": "package main\n"
+            "helpers.go": "package main\n"
             "\n"
-            f'import "{STRIPE}"\n'
+            f'import s "{STRIPE}"\n'
             "\n"
-            "func newClient() *stripe.Client {\n"
+            "func newClient() *s.Client {\n"
             "    return nil\n"
             "}\n",
-            "main.go": "package main\n"
+            "billing.go": "package main\n"
             "\n"
             f'import "{STRIPE}"\n'
             "\n"
@@ -1424,7 +1424,8 @@ def test_a_cross_file_helper_is_not_evidence(tmp_path):
 
     result = scan_go(repo, STRIPE)
 
-    assert a_attributes(result) == []
+    assert result.modules == ("billing.go", "helpers.go")
+    assert a_attributes(result) == [("Charges", True)]
 
 
 # Spec AC2: a rebinding without evidence clears the inferred receiver.
@@ -1536,7 +1537,7 @@ def test_a_wrong_parameter_type_is_not_evidence(tmp_path, annotation):
     assert a_attributes(scan_go(repo, STRIPE)) == []
 
 
-# Spec AC2: a nested function's parameters are its own.
+# Spec AC3: a nested function's parameters are its own.
 def test_a_nested_function_parameter_is_its_own(tmp_path):
     repo = a_repo(
         tmp_path,
@@ -1546,9 +1547,9 @@ def test_a_nested_function_parameter_is_its_own(tmp_path):
             f'import "{STRIPE}"\n'
             "\n"
             "func outer(client *stripe.Client) {\n"
-            "    func() {\n"
+            "    func(client *stripe.Old) {\n"
             "        client.Charges.New(params)\n"
-            "    }()\n"
+            "    }(nil)\n"
             "    client.Charges.New(params)\n"
             "}\n"
         },
@@ -1556,38 +1557,12 @@ def test_a_nested_function_parameter_is_its_own(tmp_path):
 
     result = scan_go(repo, STRIPE)
 
-    assert result.hits == (
-        a_hit(
-            repo,
-            "main.go",
-            7,
-            9,
-            SiteShape.CALL,
-            "New",
-            ("Charges", "New"),
-            False,
-        ),
-        a_hit(
-            repo,
-            "main.go",
-            9,
-            5,
-            SiteShape.CALL,
-            "New",
-            ("Client", "Charges", "New"),
-            True,
-        ),
-        a_hit(
-            repo,
-            "main.go",
-            9,
-            12,
-            SiteShape.ATTRIBUTE,
-            "Charges",
-            ("Client", "Charges"),
-            True,
-        ),
-    )
+    assert [(hit.symbol, hit.chain, hit.rooted) for hit in result.hits] == [
+        ("New", ("Old", "Charges", "New"), True),
+        ("Charges", ("Old", "Charges"), True),
+        ("New", ("Client", "Charges", "New"), True),
+        ("Charges", ("Client", "Charges"), True),
+    ]
 
 
 # Spec AC2: a local assignment without evidence clears the receiver.
@@ -1631,3 +1606,204 @@ def test_a_rebound_parameter_replaces_the_receiver(tmp_path):
     )
 
     assert a_attributes(scan_go(repo, STRIPE)) == [("Charges", True)]
+
+
+# Spec AC3: a closure inherits the enclosing typed parameter.
+def test_a_closure_inherits_the_enclosing_parameter(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func run(client *stripe.Client) {\n"
+            "    func() {\n"
+            "        client.Charges.New(params)\n"
+            "    }()\n"
+            "}\n"
+        },
+    )
+
+    result = scan_go(repo, STRIPE)
+
+    assert a_attributes(result) == [("Charges", True)]
+    assert [(hit.symbol, hit.chain) for hit in result.hits if hit.shape is SiteShape.CALL] == [
+        ("New", ("Client", "Charges", "New"))
+    ]
+
+
+# Spec AC3: a local assignment rebinds the inherited binding inside the closure only.
+def test_a_closure_rebinding_clears_the_inherited_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func run(client *stripe.Client) {\n"
+            "    func() {\n"
+            "        client = other.Thing\n"
+            "        client.Charges.New(params)\n"
+            "    }()\n"
+            "    client.Charges.New(params)\n"
+            "}\n"
+        },
+    )
+
+    result = scan_go(repo, STRIPE)
+
+    assert [(hit.symbol, hit.chain, hit.rooted) for hit in result.hits] == [
+        ("New", ("Charges", "New"), False),
+        ("New", ("Client", "Charges", "New"), True),
+        ("Charges", ("Client", "Charges"), True),
+    ]
+
+
+# Spec AC2: a same-file duplicate function name is not evidence.
+def test_a_same_file_duplicate_name_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func newClient() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n"
+            "\n"
+            "func newClient() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n"
+            "\n"
+            "func main() {\n"
+            "    client := newClient()\n"
+            "    client.Charges.New(params)\n"
+            "}\n"
+        },
+    )
+
+    assert a_attributes(scan_go(repo, STRIPE)) == []
+
+
+# Spec AC2: a duplicate name across files is not evidence, its siblings still are.
+def test_a_cross_file_duplicate_name_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func newClient() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n"
+            "\n"
+            "func newLedger() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n",
+            "other.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func newClient() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n",
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func main() {\n"
+            "    client := newClient()\n"
+            "    client.Charges.New(params)\n"
+            "    ledger := newLedger()\n"
+            "    ledger.Ledger.New(params)\n"
+            "}\n",
+        },
+    )
+
+    assert a_attributes(scan_go(repo, STRIPE)) == [("Ledger", True)]
+
+
+# Spec AC2: an unannotated duplicate still makes the name ambiguous.
+def test_an_unannotated_duplicate_makes_the_name_ambiguous(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func newClient() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n",
+            "other.go": "package main\n"
+            "\n"
+            "func newClient() {}\n",
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func main() {\n"
+            "    client := newClient()\n"
+            "    client.Charges.New(params)\n"
+            "}\n",
+        },
+    )
+
+    assert a_attributes(scan_go(repo, STRIPE)) == []
+
+
+# Spec AC1: a helper in another directory is not the same package.
+def test_a_cross_directory_helper_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers/helpers.go": "package helpers\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func newClient() *stripe.Client {\n"
+            "    return nil\n"
+            "}\n",
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func main() {\n"
+            "    client := newClient()\n"
+            "    client.Charges.New(params)\n"
+            "}\n",
+        },
+    )
+
+    assert a_attributes(scan_go(repo, STRIPE)) == []
+
+
+# Spec AC1: the first type of a cross-file result list roots the receiver.
+def test_a_cross_file_result_list_first_type_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func newSession() (stripe.Client, error) {\n"
+            "    return stripe.Client{}, nil\n"
+            "}\n",
+            "main.go": "package main\n"
+            "\n"
+            f'import "{STRIPE}"\n'
+            "\n"
+            "func main() {\n"
+            "    session, err := newSession()\n"
+            "    _ = err\n"
+            "    session.Sessions.New(params)\n"
+            "}\n",
+        },
+    )
+
+    assert a_attributes(scan_go(repo, STRIPE)) == [("Sessions", True)]

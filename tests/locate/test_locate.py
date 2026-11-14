@@ -608,3 +608,44 @@ def test_a_typed_parameter_resolves_the_operation(tmp_path):
     ] == [("app.py", 4, 27, SiteShape.KEYWORD, "amount")]
     assert result.ambiguous == ()
     assert result.reason is None
+
+
+# Spec AC5: a cross-file typed helper resolves the operation through locate().
+def test_a_cross_file_helper_resolves_the_operation(tmp_path):
+    for name, text in {
+        "pkg/__init__.py": "",
+        "pkg/helpers.py": "import stripe\n"
+        "\n"
+        "def make_client() -> stripe.Client:\n"
+        '    return stripe.Client("key")\n',
+        "pkg/billing.py": "from .helpers import make_client\n"
+        "\n"
+        "client = make_client()\n"
+        'client.charges.create(amount=100, currency="usd")\n',
+    }.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    config = LocateConfig(
+        sdk_package="stripe",
+        operations={"POST /v1/charges": "Client.charges.create"},
+    )
+
+    result = locate(
+        a_change(
+            ChangeKind.RENAMED,
+            before="amount",
+            pointer=CHARGES_BODY,
+            method="post",
+            path="/v1/charges",
+        ),
+        tmp_path,
+        config,
+    )
+
+    assert [
+        (site.path, site.line, site.column, site.shape, site.symbol)
+        for site in result.certain
+    ] == [("pkg/billing.py", 4, 23, SiteShape.KEYWORD, "amount")]
+    assert result.ambiguous == ()
+    assert result.reason is None
