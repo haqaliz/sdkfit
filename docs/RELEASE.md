@@ -1,15 +1,22 @@
 # Releasing Tenon
 
-The release is a local build/install check, a merge, an annotated tag and a GitHub release. No PyPI
-publication in 0.2.0.
+Releases are tag-driven: a `v*` tag runs `.github/workflows/release.yml`, which tests, builds,
+attaches the wheel/sdist to the GitHub release and optionally publishes to PyPI. The local checklist
+below is the pre-tag check.
 
 ## Prerequisites
 
-- `uv`, Python 3.11+, `git`, `gh` (for the GitHub release), and a clean `master`.
+- `uv`, Python 3.11+, `git`, `gh` (for a manual fallback), and a clean `master`.
 - The version in `pyproject.toml` (and `uv.lock`) is the release version; `CHANGELOG.md` has the
   `## [x.y.z] - YYYY-MM-DD` section.
 
-## Checklist
+## CI
+
+`.github/workflows/ci.yml` runs on every push/PR to `master`: the suite on Ubuntu with Python
+3.11/3.12/3.13 (`uv sync --frozen` + `uv run pytest`) and a build job that uploads the `dist/`
+artifact. The PR must be green before merging.
+
+## Local pre-tag check
 
 1. **Full suite (offline).**
 
@@ -22,11 +29,11 @@ publication in 0.2.0.
 
    ```sh
    uv sync
-   uv run tenon --version        # tenon 0.2.0
+   uv run tenon --version
    ```
 
-3. **Changelog.** The release body is the section under `## [0.2.0]`; review it for the shipped
-   capabilities and the known limits.
+3. **Changelog.** The release body is the `## [x.y.z]` section; review the shipped capabilities and
+   the known limits.
 
 4. **Build and clean-install smoke.**
 
@@ -34,8 +41,8 @@ publication in 0.2.0.
    uv build
    tmp=$(mktemp -d)
    uv venv "$tmp/venv"
-   uv pip install --python "$tmp/venv/bin/python" --quiet dist/tenonhq-0.2.0-py3-none-any.whl
-   "$tmp/venv/bin/tenon" --version        # tenon 0.2.0
+   uv pip install --python "$tmp/venv/bin/python" --quiet dist/tenonhq-*.whl
+   "$tmp/venv/bin/tenon" --version
    "$tmp/venv/bin/tenon" check --help
    rm -rf "$tmp"
    ```
@@ -49,26 +56,45 @@ publication in 0.2.0.
    git pull --ff-only origin master
    ```
 
-6. **Tag the merge commit** (annotated; push the tag).
+## Tag and release
+
+6. **Tag the merge commit** (annotated; push the tag). The tag starts the release workflow.
 
    ```sh
-   git tag -a v0.2.0 -m "Tenon v0.2.0"
-   git push origin v0.2.0
+   git tag -a vX.Y.Z -m "Tenon vX.Y.Z"
+   git push origin vX.Y.Z
    ```
 
-7. **GitHub release** with the changelog section as the body.
+7. **The release workflow.** `.github/workflows/release.yml` runs on the `v*` tag: it re-runs the
+   tests, builds the wheel/sdist, extracts `## [x.y.z]` from `CHANGELOG.md` into the release body and
+   creates/updates the GitHub release with `dist/*` attached. Watch it:
 
    ```sh
-   awk '/^## \[0.2.0\]/{flag=1; next} flag && /^## \[/{exit} flag' CHANGELOG.md > /tmp/tenon-notes.md
-   gh release create v0.2.0 --title "v0.2.0" --notes-file /tmp/tenon-notes.md
-   gh release view v0.2.0
+   gh run watch --workflow release.yml
+   gh release view vX.Y.Z
    ```
 
-8. **Verify** the release page, the tag, the README version badge and the changelog link.
+8. **PyPI (optional).** The `publish` job is skipped unless the `PYPI_PUBLISH` repository variable is
+   `true`. To enable it: create the `tenonhq` project/API token on PyPI, add the `PYPI_API_TOKEN`
+   secret, set `PYPI_PUBLISH=true`, and create the `pypi` environment (with any required reviewers).
+   The tag's version must not already exist on PyPI; re-tagging cannot republish a version.
+
+9. **Verify** the release page/assets, the version badge, the changelog link and (if enabled) the
+   PyPI version.
+
+## Manual fallback
+
+If the workflow is unavailable, the old path still works: push the tag and create the release
+manually with the changelog section as the body, then upload the artifacts.
+
+```sh
+awk '/^## \[x.y.z\]/{flag=1; next} flag && /^## \[/{exit} flag' CHANGELOG.md > /tmp/tenon-notes.md
+gh release create vX.Y.Z --title "vX.Y.Z" --notes-file /tmp/tenon-notes.md dist/*
+```
 
 ## Notes
 
-- Do not retag a published version; cut `0.1.1` for a fix.
-- The tag/release happen after the PR merges, on `master`; the release PR only carries the version,
-  changelog, examples and checklist.
-- The wheel is local for 0.2.0; a later CI release can attach the artifacts.
+- Do not retag a published version; cut a patch for a fix.
+- The tag/release happen after the PR merges, on `master`; the release PR carries the version,
+  changelog and checklist.
+- The workflows never echo the token; the PyPI token is a repository secret.
