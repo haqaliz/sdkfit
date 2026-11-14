@@ -1855,8 +1855,8 @@ def test_a_wrong_return_helper_is_not_evidence(tmp_path):
     )
 
 
-# Spec AC1: a helper defined in another file is no evidence.
-def test_a_cross_file_helper_is_not_evidence(tmp_path):
+# Spec AC1: a helper in another file of the package roots the receiver.
+def test_a_cross_file_helper_roots_the_receiver(tmp_path):
     repo = a_repo(
         tmp_path,
         {
@@ -1881,7 +1881,308 @@ def test_a_cross_file_helper_is_not_evidence(tmp_path):
 
     result = scan_csharp(repo, ROOT)
 
+    assert result.modules == ("helpers.cs", "main.cs")
     assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            8,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("StripeClient", "Charges", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            8,
+            16,
+            SiteShape.ATTRIBUTE,
+            "Charges",
+            ("StripeClient", "Charges"),
+            True,
+        ),
+    )
+
+
+# Spec AC1: `Helpers.MakeClient()` roots the receiver without a caller import.
+def test_a_member_access_helper_roots_the_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.cs": "using Stripe;\n"
+            "\n"
+            "static class Helpers\n"
+            "{\n"
+            "    public static StripeClient MakeClient() => new StripeClient();\n"
+            "}\n",
+            "billing.cs": "class Billing\n"
+            "{\n"
+            "    void Run()\n"
+            "    {\n"
+            "        var client = Helpers.MakeClient();\n"
+            "        client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n",
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.modules == ("billing.cs", "helpers.cs")
+    assert result.hits == (
+        a_hit(
+            repo,
+            "billing.cs",
+            5,
+            22,
+            SiteShape.CALL,
+            "MakeClient",
+            ("MakeClient",),
+            False,
+        ),
+        a_hit(
+            repo,
+            "billing.cs",
+            6,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("StripeClient", "Charges", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "billing.cs",
+            6,
+            16,
+            SiteShape.ATTRIBUTE,
+            "Charges",
+            ("StripeClient", "Charges"),
+            True,
+        ),
+    )
+
+
+# Spec AC2: a duplicate name across files is not evidence, its siblings still are.
+def test_a_cross_file_duplicate_name_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.cs": "using Stripe;\n"
+            "\n"
+            "static class Helpers\n"
+            "{\n"
+            "    public static StripeClient MakeClient() => new StripeClient();\n"
+            "    public static StripeClient MakeLedger() => new StripeClient();\n"
+            "}\n",
+            "other.cs": "using Stripe;\n"
+            "\n"
+            "static class Other\n"
+            "{\n"
+            "    public static CustomerClient MakeClient() => new CustomerClient();\n"
+            "}\n",
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class Billing\n"
+            "{\n"
+            "    void Run()\n"
+            "    {\n"
+            "        var client = Helpers.MakeClient();\n"
+            "        client.Charges.Create(options);\n"
+            "        var ledger = Helpers.MakeLedger();\n"
+            "        ledger.Ledger.Create(options);\n"
+            "    }\n"
+            "}\n",
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            22,
+            SiteShape.CALL,
+            "MakeClient",
+            ("Helpers", "MakeClient"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            8,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("Charges", "Create"),
+            False,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            9,
+            22,
+            SiteShape.CALL,
+            "MakeLedger",
+            ("Helpers", "MakeLedger"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            10,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("StripeClient", "Ledger", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            10,
+            16,
+            SiteShape.ATTRIBUTE,
+            "Ledger",
+            ("StripeClient", "Ledger"),
+            True,
+        ),
+    )
+
+
+# Spec AC2: an unannotated duplicate still makes the name ambiguous.
+def test_an_unannotated_duplicate_makes_the_name_ambiguous(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers.cs": "using Stripe;\n"
+            "\n"
+            "static class Helpers\n"
+            "{\n"
+            "    public static StripeClient MakeClient() => new StripeClient();\n"
+            "}\n",
+            "other.cs": "static class Other\n"
+            "{\n"
+            "    public static void MakeClient() { }\n"
+            "}\n",
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class Billing\n"
+            "{\n"
+            "    void Run()\n"
+            "    {\n"
+            "        var client = Helpers.MakeClient();\n"
+            "        client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n",
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            22,
+            SiteShape.CALL,
+            "MakeClient",
+            ("Helpers", "MakeClient"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            8,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("Charges", "Create"),
+            False,
+        ),
+    )
+
+
+# Spec AC2: a same-file duplicate method name is not evidence.
+def test_a_same_file_duplicate_name_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class ChargeRunner\n"
+            "{\n"
+            "    static StripeClient MakeClient() => new StripeClient();\n"
+            "    static StripeClient MakeClient(string key) => new StripeClient();\n"
+            "\n"
+            "    void Run()\n"
+            "    {\n"
+            "        var client = MakeClient();\n"
+            "        client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n",
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            11,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("Charges", "Create"),
+            False,
+        ),
+    )
+
+
+# Spec AC1: a helper in another directory is not the same package.
+def test_a_cross_directory_helper_is_not_evidence(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "helpers/helpers.cs": "using Stripe;\n"
+            "\n"
+            "static class Helpers\n"
+            "{\n"
+            "    public static StripeClient MakeClient() => new StripeClient();\n"
+            "}\n",
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class Billing\n"
+            "{\n"
+            "    void Run()\n"
+            "    {\n"
+            "        var client = Helpers.MakeClient();\n"
+            "        client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n",
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.modules == ("helpers/helpers.cs", "main.cs")
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            22,
+            SiteShape.CALL,
+            "MakeClient",
+            ("Helpers", "MakeClient"),
+            True,
+        ),
         a_hit(
             repo,
             "main.cs",
@@ -2023,8 +2324,8 @@ def test_a_wrong_parameter_type_is_not_evidence(tmp_path, declaration):
     )
 
 
-# Spec AC1: a nested function's parameters are its own.
-def test_a_nested_function_parameter_is_its_own(tmp_path):
+# Spec AC3: a local function inherits the enclosing typed parameter.
+def test_a_local_function_inherits_the_enclosing_parameter(tmp_path):
     repo = a_repo(
         tmp_path,
         {
@@ -2054,8 +2355,18 @@ def test_a_nested_function_parameter_is_its_own(tmp_path):
             13,
             SiteShape.CALL,
             "Create",
-            ("Charges", "Create"),
-            False,
+            ("StripeClient", "Charges", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            9,
+            20,
+            SiteShape.ATTRIBUTE,
+            "Charges",
+            ("StripeClient", "Charges"),
+            True,
         ),
         a_hit(
             repo,
@@ -2071,6 +2382,150 @@ def test_a_nested_function_parameter_is_its_own(tmp_path):
             repo,
             "main.cs",
             11,
+            16,
+            SiteShape.ATTRIBUTE,
+            "Charges",
+            ("StripeClient", "Charges"),
+            True,
+        ),
+    )
+
+
+# Spec AC3: a lambda inherits the enclosing typed parameter.
+def test_a_lambda_inherits_the_enclosing_parameter(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class ChargeRunner\n"
+            "{\n"
+            "    void Run(StripeClient client)\n"
+            "    {\n"
+            "        Action send = () => client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n"
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            29,
+            SiteShape.CALL,
+            "Create",
+            ("StripeClient", "Charges", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            36,
+            SiteShape.ATTRIBUTE,
+            "Charges",
+            ("StripeClient", "Charges"),
+            True,
+        ),
+    )
+
+
+# Spec AC3: a lambda's own typed parameter wins over the inherited binding.
+def test_a_lambda_parameter_roots_its_body(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class ChargeRunner\n"
+            "{\n"
+            "    void Run(StripeClient client)\n"
+            "    {\n"
+            "        Action send = (CustomerClient other) => other.Charges.Create(options);\n"
+            "    }\n"
+            "}\n"
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            49,
+            SiteShape.CALL,
+            "Create",
+            ("CustomerClient", "Charges", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            7,
+            55,
+            SiteShape.ATTRIBUTE,
+            "Charges",
+            ("CustomerClient", "Charges"),
+            True,
+        ),
+    )
+
+
+# Spec AC3: a local assignment rebinds the inherited binding inside the closure only.
+def test_a_closure_rebinding_clears_the_inherited_receiver(tmp_path):
+    repo = a_repo(
+        tmp_path,
+        {
+            "main.cs": "using Stripe;\n"
+            "\n"
+            "class ChargeRunner\n"
+            "{\n"
+            "    void Run(StripeClient client)\n"
+            "    {\n"
+            "        void Inner()\n"
+            "        {\n"
+            "            client = Build();\n"
+            "            client.Charges.Create(options);\n"
+            "        }\n"
+            "        client.Charges.Create(options);\n"
+            "    }\n"
+            "}\n"
+        },
+    )
+
+    result = scan_csharp(repo, ROOT)
+
+    assert result.hits == (
+        a_hit(
+            repo,
+            "main.cs",
+            10,
+            13,
+            SiteShape.CALL,
+            "Create",
+            ("Charges", "Create"),
+            False,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            12,
+            9,
+            SiteShape.CALL,
+            "Create",
+            ("StripeClient", "Charges", "Create"),
+            True,
+        ),
+        a_hit(
+            repo,
+            "main.cs",
+            12,
             16,
             SiteShape.ATTRIBUTE,
             "Charges",
