@@ -1,38 +1,68 @@
-# Card: feat/ci-release
+# Card: feat/cross-file
 
 - **Source:** FALLBACK — no GitHub issue (`gh issue list` is empty).
 - **Owner:** aliz
 - **Type:** feat
-- **Capability:** **CI/PyPI release pipeline** — the release-operations follow-up to v0.2.0
-- **Milestone:** after v0.2.0
-- **Branch:** `feat/ci-release/aliz`
-- **Worktree:** `.claude/worktrees/feat-ci-release`
+- **Capability:** **T12 Receiver tracking** — deeper slice: **cross-file inference** (T12e)
+- **Milestone:** after T12d; the receiver follow-up
+- **Branch:** `feat/cross-file/aliz`
+- **Worktree:** `.claude/worktrees/feat-cross-file`
 
 ## Brief
 
-Every release is manual: run the tests, `uv build`, install the wheel, tag, and `gh release create`.
-The tests run only locally; a pull request has no CI.
+T12c/T12d infer a receiver from an annotated return type or parameter **in the same file**. A helper
+is often defined in another file of the same package/module/namespace:
 
-This slice adds:
-- a **CI workflow** on push/PR: the suite on a Python matrix, plus a wheel/sdist build artifact;
-- a **release workflow** on a `v*` tag: re-run the tests, build, attach the wheel/sdist to the GitHub
-  release with the changelog section as the body;
-- an **optional PyPI publish** (token or trusted publishing) gated so a release never publishes by
-  accident;
-- docs (`docs/RELEASE.md`, README CI badge) and static workflow tests; the workflows run for real on
-  the PR/next tag.
+```go
+// helpers.go
+func newClient() *stripe.Client { ... }
+// billing.go
+client := newClient()
+client.Charges.New(...)
+```
+```csharp
+// Helpers.cs
+static StripeClient MakeClient() => ...;
+// Billing.cs
+var client = Helpers.MakeClient();
+client.Charges.Create(...);
+```
+```python
+# helpers.py
+def make_client() -> stripe.Client: ...
+# billing.py
+from .helpers import make_client
+client = make_client()
+```
+```ts
+// helpers.ts
+export function makeClient(): StripeClient { ... }
+// billing.ts
+import { makeClient } from "./helpers";
+const client = makeClient();
+```
+```rust
+// helpers.rs
+pub fn make_client() -> Client { ... }
+// billing.rs
+use crate::helpers::make_client;
+let client = make_client();
+```
 
-No runtime/locator/provider behavior changes.
+T12e extends the annotated-signature inference across files within the same package/module/namespace
+(or, if chosen, the repository), and optionally captures an outer typed parameter inside a nested
+function. Only written annotations count; a duplicate name across files is not evidence (ambiguous),
+not a guess.
 
 ## Constraints carried in from the repo
 
-- `pyproject.toml`/`uv.lock`; the `uv` toolchain; Python >= 3.11.
-- The release checklist and `scripts/release_check.sh` are the current manual path.
-- The repo is `haqaliz/tenon`; the package/distribution is `tenonhq`.
-- No secrets in the repo; the PyPI token (if chosen) is a GitHub secret, the publish gate a
-  repository variable/environment.
+- T12a–T12d's receiver bindings and signature maps are the base; extend, do not fork.
+- The crate/package/namespace/import roots and aliases resolve the types; the new part is the
+  file/package index and import/module resolution.
+- Stdlib/tree-sitter/`ast` only; offline fixtures/tests.
+- The shared `derive`/`resolve` policy decides certainty.
 
 ## Scope fence
 
-Not this card: new features, cross-file inference, a hardened cloud deployment, a SaaS control
-plane, signing/provenance beyond the PyPI defaults.
+Not this card: unannotated inference, SDK return types without an annotation/mapping, full type
+inference, generics/overload resolution, a service change.
