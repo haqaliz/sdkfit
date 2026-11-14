@@ -3,7 +3,7 @@
 - **Slug:** `cross-file`
 - **Capability:** **T12 Receiver tracking** — deeper slice: **cross-file signatures and closures**
 - **Milestone:** after T12d; the receiver follow-up
-- **Status:** draft for review
+- **Status:** implemented 2026-11-15 (`src/tenon/locate/*_scan.py`, cross-file signatures and closures; 2,719 tests)
 - **Card:** `docs/planning/_card/issue.md`
 
 ## Problem Statement

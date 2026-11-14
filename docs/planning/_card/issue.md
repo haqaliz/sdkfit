@@ -5,6 +5,7 @@
 - **Type:** feat
 - **Capability:** **T12 Receiver tracking** — deeper slice: **cross-file inference** (T12e)
 - **Milestone:** after T12d; the receiver follow-up
+- **State:** T12e shipped 2026-11-15 (`src/tenon/locate/*_scan.py`, cross-file signatures and closures; 2,719 tests)
 - **Branch:** `feat/cross-file/aliz`
 - **Worktree:** `.claude/worktrees/feat-cross-file`
 

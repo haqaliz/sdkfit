@@ -7,6 +7,14 @@ promise: flags, config keys and provider contracts may still change.
 
 ## [Unreleased]
 
+### Added
+
+- **Cross-file receiver inference (T12e):** each scanner indexes annotated helper return types
+  across the files of the same package/module/namespace (Go directory, C# directory, Python/TS/Rust
+  imports) and roots the receiver assigned from a cross-file call; a function/arrow/closure inherits
+  the enclosing bindings. A duplicate helper name is ambiguous; a cross-package helper is not
+  evidence.
+
 ## [0.2.0] - 2026-11-14
 
 ### Added
