@@ -97,6 +97,22 @@ def test_the_release_notes_extraction_handles_the_dated_heading(tmp_path):
     assert "the old entry" not in notes
 
 
+# Spec AC2/AC5: a tag builds and pushes the service image to GHCR.
+def test_the_image_job_publishes_to_ghcr():
+    image = a_workflow("release.yml")["jobs"]["image"]
+
+    assert image["needs"] == "build"
+    assert image["permissions"]["packages"] == "write"
+    assert image["permissions"]["contents"] == "read"
+    a_step(image["steps"], "docker/login-action@")
+    build = a_step(image["steps"], "docker/build-push-action@")
+    assert build["with"]["push"] is True
+    assert "ghcr.io/" in build["with"]["tags"]
+    assert ":latest" in build["with"]["tags"]
+    runs = "\n".join(str(step.get("run", "")) for step in image["steps"])
+    assert "GITHUB_REF_NAME#v" in runs
+
+
 # Spec AC3: PyPI uses trusted publishing, still gated and skipped by default.
 def test_publish_uses_trusted_publishing_and_is_gated():
     publish = a_workflow("release.yml")["jobs"]["publish"]

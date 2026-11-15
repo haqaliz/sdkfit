@@ -66,8 +66,9 @@ artifact. The PR must be green before merging.
    ```
 
 7. **The release workflow.** `.github/workflows/release.yml` runs on the `v*` tag: it re-runs the
-   tests, builds the wheel/sdist, extracts `## [x.y.z]` from `CHANGELOG.md` into the release body and
-   creates/updates the GitHub release with `dist/*` attached. Watch it:
+   tests, builds the wheel/sdist, builds and pushes the container image, extracts `## [x.y.z]` from
+   `CHANGELOG.md` into the release body and creates/updates the GitHub release with `dist/*`
+   attached. Watch it:
 
    ```sh
    gh run watch --workflow release.yml
