@@ -97,8 +97,24 @@ def test_the_release_notes_extraction_handles_the_dated_heading(tmp_path):
     assert "the old entry" not in notes
 
 
-# Spec AC3: PyPI is an explicit, token-based opt-in and is skipped by default.
-def test_publish_is_gated_by_the_variable_and_uses_a_secret():
+# Spec AC2/AC5: a tag builds and pushes the service image to GHCR.
+def test_the_image_job_publishes_to_ghcr():
+    image = a_workflow("release.yml")["jobs"]["image"]
+
+    assert image["needs"] == "build"
+    assert image["permissions"]["packages"] == "write"
+    assert image["permissions"]["contents"] == "read"
+    a_step(image["steps"], "docker/login-action@")
+    build = a_step(image["steps"], "docker/build-push-action@")
+    assert build["with"]["push"] is True
+    assert "ghcr.io/" in build["with"]["tags"]
+    assert ":latest" in build["with"]["tags"]
+    runs = "\n".join(str(step.get("run", "")) for step in image["steps"])
+    assert "GITHUB_REF_NAME#v" in runs
+
+
+# Spec AC3: PyPI uses trusted publishing, still gated and skipped by default.
+def test_publish_uses_trusted_publishing_and_is_gated():
     publish = a_workflow("release.yml")["jobs"]["publish"]
 
     assert "PYPI_PUBLISH" in publish["if"]
@@ -106,7 +122,10 @@ def test_publish_is_gated_by_the_variable_and_uses_a_secret():
     assert publish["permissions"]["id-token"] == "write"
     assert publish["permissions"]["contents"] == "read"
     action = a_step(publish["steps"], "pypa/gh-action-pypi-publish@")
-    assert "PYPI_API_TOKEN" in action["with"]["password"]
+    assert "password" not in action.get("with", {})
+    assert action["with"]["packages-dir"] == "dist/"
+    workflow = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    assert "PYPI_API_TOKEN" not in workflow
 
 
 # Spec AC4: the badge and the operator guide carry the workflow names and settings.
@@ -114,5 +133,13 @@ def test_the_badge_and_guide_document_the_pipeline():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "actions/workflows/ci.yml/badge.svg" in readme
     guide = (ROOT / "docs" / "RELEASE.md").read_text(encoding="utf-8")
-    for value in ("ci.yml", "release.yml", "PYPI_PUBLISH", "PYPI_API_TOKEN", "pypi"):
+    for value in (
+        "ci.yml",
+        "release.yml",
+        "PYPI_PUBLISH",
+        "trusted publisher",
+        "pypi",
+        "pip install tenonhq",
+    ):
         assert value in guide
+    assert "PYPI_API_TOKEN" not in guide

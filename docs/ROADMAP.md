@@ -52,7 +52,8 @@ deployable service behind Caddy) and T13b (workers/retries/cancel/metrics/SQLite
 2026-11-12; T10f (webhook-triggered runs) shipped 2026-11-14; T14 (CI and release pipeline) shipped
 2026-11-14; T15 (Postgres store, `--database-url` and Kubernetes manifests) shipped 2026-11-16. The
 service is containerized, resilient, event-triggerable and horizontally scalable; repo-wide
-cross-package receiver indexes are not.
+cross-package receiver indexes are not. T16 (launch readiness) is ready: PyPI trusted publishing, a
+GHCR image job, the offline demo and the launch kit; the launch name decision is open.
 
 **v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15; v0.4.0 released 2026-11-16**
 — see `CHANGELOG.md` and `docs/RELEASE.md`.

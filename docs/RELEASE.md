@@ -66,21 +66,43 @@ artifact. The PR must be green before merging.
    ```
 
 7. **The release workflow.** `.github/workflows/release.yml` runs on the `v*` tag: it re-runs the
-   tests, builds the wheel/sdist, extracts `## [x.y.z]` from `CHANGELOG.md` into the release body and
-   creates/updates the GitHub release with `dist/*` attached. Watch it:
+   tests, builds the wheel/sdist, builds and pushes the container image, extracts `## [x.y.z]` from
+   `CHANGELOG.md` into the release body and creates/updates the GitHub release with `dist/*`
+   attached. Watch it:
 
    ```sh
    gh run watch --workflow release.yml
    gh release view vX.Y.Z
    ```
 
-8. **PyPI (optional).** The `publish` job is skipped unless the `PYPI_PUBLISH` repository variable is
-   `true`. To enable it: create the `tenonhq` project/API token on PyPI, add the `PYPI_API_TOKEN`
-   secret, set `PYPI_PUBLISH=true`, and create the `pypi` environment (with any required reviewers).
-   The tag's version must not already exist on PyPI; re-tagging cannot republish a version.
+8. **PyPI (optional).** The `publish` job uses **trusted publishing** (OIDC) and is skipped unless
+   the `PYPI_PUBLISH` repository variable is `true`. One-time setup on PyPI:
 
-9. **Verify** the release page/assets, the version badge, the changelog link and (if enabled) the
-   PyPI version.
+   - The `tenonhq` project exists (create/reserve the name on your PyPI account).
+   - Add a trusted publisher: owner `haqaliz`, repository `tenon`, workflow `release.yml`,
+     environment `pypi`.
+   - Create the `pypi` environment in GitHub (add reviewers if you want a manual approval).
+   - Set the `PYPI_PUBLISH` repository variable to `true` only when you are ready to publish.
+
+   There is **no API token secret**: the job proves the repository identity with a short-lived OIDC
+   token. A PyPI version cannot be reused, so the first publish is deliberate; do not retag a
+   published version.
+
+   Verify the install after the workflow:
+
+   ```sh
+   pip install tenonhq==X.Y.Z
+   tenon --version
+   ```
+
+9. **Verify** the release page/assets, the version badge, the changelog link, the container image
+   (`ghcr.io/haqaliz/tenon:X.Y.Z`) and (if enabled) the PyPI version.
+
+## Launch assets
+
+After the tag publishes, run the launch checklist in `docs/launch/LAUNCH.md`: PyPI/GHCR install and
+pull checks, the offline demo, the gallery, the Product Hunt draft and the name decision in
+`docs/launch/NAME_CHECK.md`.
 
 ## Manual fallback
 
@@ -97,4 +119,5 @@ gh release create vX.Y.Z --title "vX.Y.Z" --notes-file /tmp/tenon-notes.md dist/
 - Do not retag a published version; cut a patch for a fix.
 - The tag/release happen after the PR merges, on `master`; the release PR carries the version,
   changelog and checklist.
-- The workflows never echo the token; the PyPI token is a repository secret.
+- The workflows never echo a secret; PyPI publication uses OIDC trusted publishing, not a stored
+  token.

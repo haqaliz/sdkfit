@@ -19,6 +19,7 @@ Engine capabilities in build order. Each lands test-first.
 | **T13** | **Hardened deployment.** Container, TLS proxy, backups, resilience. | T10e | Operator-owned secrets | **Shipped 2026-11-12** — deployable Compose + Caddy, workers/retries/cancel/metrics, SQLite hardening |
 | **T14** | **CI and release pipeline.** Test matrix, artifacts and a tag-driven release. | T13 | PyPI an explicit opt-in | **Shipped 2026-11-14** — CI 3.11–3.13 + build, tag release with wheel/sdist, gated PyPI |
 | **T15** | **Hardened cloud deployment.** Shared Postgres queue and Kubernetes manifests. | T13 | Operator-owned cluster/secrets | **Shipped 2026-11-16** — `PostgresRunStore`, `--database-url`, Deployment/Ingress/HPA, cloud guide |
+| **T16** | **Launch readiness.** PyPI trusted publishing, GHCR image, offline demo and launch kit. | T15 | Operator-owned PyPI/registry; name decision | **Ready 2026-11-16** — OIDC publish, `ghcr.io` image job, demo/transcript, launch kit; the launch name is an open blocker |
 
 ### T1 as shipped (2026-10-26)
 
@@ -450,6 +451,20 @@ Known limits: the SQL is tested against a fake driver (the first real Postgres r
 integration test); the in-cluster Postgres example is not HA and has no backups (use a managed DB);
 ingress rate limits are nginx-specific; recovery waits for the run-timeout lease; the HPA scales on
 CPU, not queue depth; the service stays single-tenant.
+
+### T16 as built (2026-11-16)
+
+The release workflow publishes `tenonhq` to PyPI with OIDC trusted publishing (no token secret,
+still behind `PYPI_PUBLISH=true` and the `pypi` environment) and pushes the service image to
+`ghcr.io/haqaliz/tenon:<version>`/`:latest` from the same tag. `examples/launch-demo/` + `scripts/launch_demo.sh`
+run the shipped check/fix/provider pipeline offline on a self-contained consumer repo, with the
+recorded transcript in `docs/launch/DEMO.md`. `docs/launch/` carries the positioning, tagline,
+descriptions, FAQ, gallery plan, first comment, launch-day checklist and a live name/handles check.
+2,775 tests, offline.
+
+Known limits: the live PyPI/GHCR publishes are only exercised on the next tag; the PyPI project and
+trusted publisher are operator setup; the `tenonhq` name collides with tenonhq.com (the launch name
+is an open decision, not a solved one); the launch kit has no generated art and no submission.
 
 
 

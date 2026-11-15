@@ -28,7 +28,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: tenon
-          image: ghcr.io/haqaliz/tenon:0.4.0
+          # Published by the release workflow; pin the release tag in production.
+          image: ghcr.io/haqaliz/tenon:latest
           imagePullPolicy: IfNotPresent
           args:
             - provider

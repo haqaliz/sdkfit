@@ -12,6 +12,19 @@ affected calls, and proves the fix against your own checks before it opens a pul
 
 ---
 
+## Install
+
+From source today (the PyPI release is configured for the next tagged release):
+
+```sh
+git clone https://github.com/haqaliz/tenon.git
+cd tenon
+uv sync
+uv run tenon --version
+```
+
+The launch demo runs offline in about 30 seconds: `bash scripts/launch_demo.sh`.
+
 ## Status
 
 **T1 (change detection), T2 (Python call-site location), T3 (patch proposal), T4 (proof runner),

@@ -77,6 +77,14 @@ def test_the_deployment_is_a_hardened_two_replica_pod():
     assert annotations["prometheus.io/port"] == "8080"
 
 
+# Spec AC5: the Deployment pulls the image the release workflow publishes.
+def test_the_deployment_uses_the_published_image():
+    deployment = a_by_kind("deployment.yaml", "Deployment")
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+
+    assert container["image"].startswith("ghcr.io/haqaliz/tenon:")
+
+
 # Spec AC5: the Deployment never carries a literal secret.
 def test_the_deployment_has_no_secret_literals():
     deployment = a_by_kind("deployment.yaml", "Deployment")
@@ -197,6 +205,7 @@ def test_the_cloud_guide_documents_the_operations():
 
     for value in (
         "apply -k deploy/k8s",
+        "ghcr.io",
         "TENON_DATABASE_URL",
         "--database-url",
         "SKIP LOCKED",
