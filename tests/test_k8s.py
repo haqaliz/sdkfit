@@ -189,3 +189,23 @@ def test_the_image_installs_the_postgres_extra():
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
 
     assert "--extra postgres" in dockerfile
+
+
+# Spec AC1/AC2: the guide covers the operator flow and the README links it.
+def test_the_cloud_guide_documents_the_operations():
+    guide = (ROOT / "docs" / "technical" / "CLOUD.md").read_text(encoding="utf-8")
+
+    for value in (
+        "apply -k deploy/k8s",
+        "TENON_DATABASE_URL",
+        "--database-url",
+        "SKIP LOCKED",
+        "limit-rps",
+        "HorizontalPodAutoscaler",
+        "managed",
+        "backup",
+        "recovery",
+    ):
+        assert value in guide
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "docs/technical/CLOUD.md" in readme

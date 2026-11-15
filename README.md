@@ -22,7 +22,8 @@ provider fan-out), T10e (hosted provider service), T10f (webhook-triggered runs)
 call-site location), T11b (Go call-site location), T11c (C# call-site location), T12a (Rust/Go
 receiver tracking), T12b (C#/Python/TS receiver tracking), T12c (annotated return-type inference),
 T12d (typed-parameter inference), T12e (cross-file signatures and closures), T13a (deployable
-service), T13b (service resilience) and the `tenon check` /
+service), T13b (service resilience), T14 (CI and release pipeline), T15 (hardened cloud deployment)
+and the `tenon check` /
 `tenon fix` / `tenon provider migrate` / `tenon provider serve` / `tenon probe` / `tenon corpus` CLI
 are shipped.**
 `src/tenon/detect/` diffs two OpenAPI 3.x documents — and two MCP `tools/list` documents — into typed
@@ -277,14 +278,18 @@ given.
 
 ### Provider service
 
-`tenon provider serve --bundles DIR --db PATH --api-token TOKEN [--webhook-secret SECRET]
-[--trigger EVENT[.ACTION]=BUNDLE ...] [--host 127.0.0.1] [--port 8080] [--run-timeout 3600]
-[--poll 1.0] [--workers N] [--retries N] [--dry-run] [--app-id ID] [--app-installation-id ID]
-[--app-private-key PATH] [--api-url URL]` starts a self-hosted HTTP service and N background workers
-(default 1, max 16).
+`tenon provider serve --bundles DIR (--db PATH | --database-url URL) --api-token TOKEN
+[--webhook-secret SECRET] [--trigger EVENT[.ACTION]=BUNDLE ...] [--host 127.0.0.1] [--port 8080]
+[--run-timeout 3600] [--poll 1.0] [--workers N] [--retries N] [--dry-run] [--app-id ID]
+[--app-installation-id ID] [--app-private-key PATH] [--api-url URL]` starts a self-hosted HTTP
+service and N background workers (default 1, max 16).
 `--api-token`/`TENON_API_TOKEN` is required and non-empty, `--bundles` must be an existing directory,
-and `--db` is the SQLite store (created and migrated on open); a bad value or an out-of-bounds
-`--workers` (1..16) or `--retries` (0..10) is a named usage error (exit 2).
+and exactly one of `--db` (the SQLite store, created and migrated on open) or
+`--database-url`/`TENON_DATABASE_URL` (the Postgres store; install `tenonhq[postgres]`) is required;
+a bad value or an out-of-bounds `--workers` (1..16) or `--retries` (0..10) is a named usage error
+(exit 2). The Postgres queue claims rows with `FOR UPDATE SKIP LOCKED`, so several replicas can share
+it. For a Kubernetes deployment (TLS, rate limits, HPA, Postgres) see
+`docs/technical/CLOUD.md`.
 `--webhook-secret`/`TENON_WEBHOOK_SECRET` is optional. `--dry-run` runs the installed fan-out with no
 PR call. The app identity is the T10a one; the child receives the private key path, never its
 contents.

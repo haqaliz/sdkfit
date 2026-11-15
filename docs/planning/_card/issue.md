@@ -5,6 +5,7 @@
 - **Type:** feat
 - **Capability:** **T15 Hardened cloud deployment** — beyond the Compose/Caddy MVP
 - **Milestone:** after v0.3.0
+- **State:** T15 shipped 2026-11-16 (Postgres store/queue, Kubernetes manifests, cloud guide; 2,771 tests)
 - **Branch:** `feat/cloud-deploy/aliz`
 - **Worktree:** `.claude/worktrees/feat-cloud-deploy`
 

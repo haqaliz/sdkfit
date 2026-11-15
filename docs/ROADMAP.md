@@ -49,8 +49,10 @@ closures) shipped 2026-11-15**
 (`src/tenon/pr/{app,api,github_app,installed}.py`, `src/tenon/provider/`, `src/tenon/service/`,
 `src/tenon/locate/`, `Dockerfile`/`docker-compose.yml`/`Caddyfile`, CLI; 2,558 tests). T13a (a
 deployable service behind Caddy) and T13b (workers/retries/cancel/metrics/SQLite hardening) shipped
-2026-11-12; T10f (webhook-triggered runs) shipped 2026-11-14. The self-hosted service is
-containerized, resilient and event-triggerable; repo-wide cross-package receiver indexes are not.
+2026-11-12; T10f (webhook-triggered runs) shipped 2026-11-14; T14 (CI and release pipeline) shipped
+2026-11-14; T15 (Postgres store, `--database-url` and Kubernetes manifests) shipped 2026-11-16. The
+service is containerized, resilient, event-triggerable and horizontally scalable; repo-wide
+cross-package receiver indexes are not.
 
 **v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15**
 — see `CHANGELOG.md` and `docs/RELEASE.md`.

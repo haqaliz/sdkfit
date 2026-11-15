@@ -3,7 +3,7 @@
 - **Slug:** `cloud-deploy`
 - **Capability:** **T15 Hardened cloud deployment** — beyond the Compose/Caddy MVP
 - **Milestone:** after v0.3.0
-- **Status:** draft for review
+- **Status:** implemented 2026-11-16 (`src/tenon/service/postgres.py`, `deploy/k8s/`, `docs/technical/CLOUD.md`; 2,771 tests)
 - **Card:** `docs/planning/_card/issue.md`
 
 ## Problem Statement

@@ -271,7 +271,8 @@ test"` is just a user command.
   fan-out), T10d (installed provider fan-out), T10e (hosted provider service), T11a (Rust locator),
   T11b (Go locator) and T11c (C# locator) shipped; T12a (Rust/Go receiver tracking), T12b
   (C#/Python/TS receiver tracking), T12c (annotated return-type inference), T12d (typed-parameter
-  inference) and T12e (cross-file signatures and closures) shipped; T13a (deployable service) and
-  T13b (resilience) shipped; T10f (webhook-triggered runs) shipped. Repo-wide cross-package indexes
-  and a hardened cloud deployment beyond Compose are not started. v0.1.0 was the first tagged
-  release (2026-11-13); v0.2.0 shipped 2026-11-14; v0.3.0 shipped 2026-11-15.
+  inference) and T12e (cross-file signatures and closures) shipped; T13a (deployable service),
+  T13b (resilience), T14 (CI and release pipeline) and T15 (Postgres store + Kubernetes manifests)
+  shipped; T10f (webhook-triggered runs) shipped. Repo-wide cross-package indexes are not started.
+  v0.1.0 was the first tagged release (2026-11-13); v0.2.0 shipped 2026-11-14; v0.3.0 shipped
+  2026-11-15.
