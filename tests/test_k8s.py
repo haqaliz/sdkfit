@@ -35,13 +35,13 @@ def test_the_deployment_is_a_hardened_two_replica_pod():
     assert container["resources"]["limits"]
 
     env = {entry["name"]: entry for entry in container["env"]}
-    database = env["TENON_DATABASE_URL"]["valueFrom"]["secretKeyRef"]
-    assert database == {"name": "tenon-secrets", "key": "database-url"}
-    assert env["TENON_API_TOKEN"]["valueFrom"]["secretKeyRef"]["name"] == (
-        "tenon-secrets"
+    database = env["SDKFIT_DATABASE_URL"]["valueFrom"]["secretKeyRef"]
+    assert database == {"name": "sdkfit-secrets", "key": "database-url"}
+    assert env["SDKFIT_API_TOKEN"]["valueFrom"]["secretKeyRef"]["name"] == (
+        "sdkfit-secrets"
     )
-    assert env["TENON_WEBHOOK_SECRET"]["valueFrom"]["secretKeyRef"]["name"] == (
-        "tenon-secrets"
+    assert env["SDKFIT_WEBHOOK_SECRET"]["valueFrom"]["secretKeyRef"]["name"] == (
+        "sdkfit-secrets"
     )
 
     args = container["args"]
@@ -67,9 +67,9 @@ def test_the_deployment_is_a_hardened_two_replica_pod():
     assert mounts["tmp"]["mountPath"] == "/tmp"
     volumes = {volume["name"]: volume for volume in pod["volumes"]}
     assert volumes["bundles"]["persistentVolumeClaim"]["claimName"] == (
-        "tenon-bundles"
+        "sdkfit-bundles"
     )
-    assert volumes["app-key"]["secret"]["secretName"] == "tenon-app-key"
+    assert volumes["app-key"]["secret"]["secretName"] == "sdkfit-app-key"
     assert volumes["tmp"]["emptyDir"] == {}
 
     annotations = deployment["spec"]["template"]["metadata"]["annotations"]
@@ -82,7 +82,7 @@ def test_the_deployment_uses_the_published_image():
     deployment = a_by_kind("deployment.yaml", "Deployment")
     container = deployment["spec"]["template"]["spec"]["containers"][0]
 
-    assert container["image"].startswith("ghcr.io/haqaliz/tenon:")
+    assert container["image"].startswith("ghcr.io/haqaliz/sdkfit:")
 
 
 # Spec AC5: the Deployment never carries a literal secret.
@@ -117,7 +117,7 @@ def test_the_ingress_has_tls_and_rate_limits():
     rule = ingress["spec"]["rules"][0]
     assert rule["host"]
     backend = rule["http"]["paths"][0]["backend"]["service"]
-    assert backend["name"] == "tenon"
+    assert backend["name"] == "sdkfit"
     assert backend["port"]["name"] == "http"
 
 
@@ -138,7 +138,7 @@ def test_the_postgres_example_is_a_statefulset_with_storage():
     assert {"StatefulSet", "Service"} <= kinds
 
     stateful = a_by_kind("postgres.yaml", "StatefulSet")
-    assert stateful["spec"]["serviceName"] == "tenon-postgres"
+    assert stateful["spec"]["serviceName"] == "sdkfit-postgres"
     container = stateful["spec"]["template"]["spec"]["containers"][0]
     assert container["image"].startswith("postgres:")
     claim = stateful["spec"]["volumeClaimTemplates"][0]
@@ -149,7 +149,7 @@ def test_the_postgres_example_is_a_statefulset_with_storage():
 def test_the_bundles_claim_is_shared():
     pvc = a_by_kind("bundles-pvc.yaml", "PersistentVolumeClaim")
 
-    assert pvc["metadata"]["name"] == "tenon-bundles"
+    assert pvc["metadata"]["name"] == "sdkfit-bundles"
     assert "ReadWriteMany" in pvc["spec"]["accessModes"]
 
 
@@ -158,23 +158,23 @@ def test_the_secret_example_holds_placeholders_only():
     docs = a_documents("secret.example.yaml")
 
     assert {doc["metadata"]["name"] for doc in docs} == {
-        "tenon-secrets",
-        "tenon-app-key",
+        "sdkfit-secrets",
+        "sdkfit-app-key",
     }
     for doc in docs:
         for value in doc["stringData"].values():
             assert "replace" in value.lower()
     database = next(
-        doc for doc in docs if doc["metadata"]["name"] == "tenon-secrets"
+        doc for doc in docs if doc["metadata"]["name"] == "sdkfit-secrets"
     )["stringData"]["database-url"]
-    assert "tenon-postgres:5432" in database
+    assert "sdkfit-postgres:5432" in database
 
 
 # Spec AC4: the app identity is operator config, not a baked-in constant.
 def test_the_configmap_example_carries_the_app_identity():
     config = a_by_kind("configmap.example.yaml", "ConfigMap")
 
-    assert config["metadata"]["name"] == "tenon-config"
+    assert config["metadata"]["name"] == "sdkfit-config"
     assert config["data"]["app-id"]
     assert config["data"]["app-installation-id"]
 
@@ -206,7 +206,7 @@ def test_the_cloud_guide_documents_the_operations():
     for value in (
         "apply -k deploy/k8s",
         "ghcr.io",
-        "TENON_DATABASE_URL",
+        "SDKFIT_DATABASE_URL",
         "--database-url",
         "SKIP LOCKED",
         "limit-rps",

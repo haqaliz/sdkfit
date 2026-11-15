@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from tenon.detect import ChangeKind, Unanalyzed, UnanalyzedReason, diff
-from tenon.detect.diff import _SchemaContext
-from tenon.detect.ingest import load
+from sdkfit.detect import ChangeKind, Unanalyzed, UnanalyzedReason, diff
+from sdkfit.detect.diff import _SchemaContext
+from sdkfit.detect.ingest import load
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "specs"
 

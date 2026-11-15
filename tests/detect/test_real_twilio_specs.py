@@ -7,7 +7,7 @@ point and cannot be committed at 4.4 MB.
 
 from pathlib import Path
 
-from tenon.detect import ChangeKind, diff, load
+from sdkfit.detect import ChangeKind, diff, load
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "specs"
 

@@ -139,7 +139,7 @@ def test_the_badge_and_guide_document_the_pipeline():
         "PYPI_PUBLISH",
         "trusted publisher",
         "pypi",
-        "pip install tenonhq",
+        "pip install sdkfit",
     ):
         assert value in guide
     assert "PYPI_API_TOKEN" not in guide

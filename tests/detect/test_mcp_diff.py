@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import ChangeKind, Location, UnanalyzedReason, diff
-from tenon.detect.mcp_diff import diff_mcp
-from tenon.detect.mcp_ingest import load_mcp, parse_mcp
+from sdkfit.detect import ChangeKind, Location, UnanalyzedReason, diff
+from sdkfit.detect.mcp_diff import diff_mcp
+from sdkfit.detect.mcp_ingest import load_mcp, parse_mcp
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "mcp"
 
@@ -749,8 +749,8 @@ def test_schema_property_order_is_irrelevant():
 SUBPROCESS_SCRIPT = f"""
 from pathlib import Path
 
-from tenon.detect.mcp_diff import diff_mcp
-from tenon.detect.mcp_ingest import load_mcp
+from sdkfit.detect.mcp_diff import diff_mcp
+from sdkfit.detect.mcp_ingest import load_mcp
 
 fixtures = Path({str(FIXTURES)!r})
 print(
@@ -779,9 +779,9 @@ def test_diff_json_is_byte_stable_across_hash_seeds():
 
 
 # Spec AC8/M8: the package exports the MCP differ; diff stays as shipped.
-def test_tenon_detect_exports_diff_mcp():
-    import tenon.detect
-    from tenon.detect.mcp_diff import diff_mcp as module_diff_mcp
+def test_sdkfit_detect_exports_diff_mcp():
+    import sdkfit.detect
+    from sdkfit.detect.mcp_diff import diff_mcp as module_diff_mcp
 
-    assert tenon.detect.diff_mcp is module_diff_mcp
-    assert callable(tenon.detect.diff)
+    assert sdkfit.detect.diff_mcp is module_diff_mcp
+    assert callable(sdkfit.detect.diff)

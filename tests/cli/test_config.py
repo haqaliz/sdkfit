@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from tenon.cli import CliConfig, load_cli_config, overrides, resolve_config_path
-from tenon.locate import (
+from sdkfit.cli import CliConfig, load_cli_config, overrides, resolve_config_path
+from sdkfit.locate import (
     CSharpLocateConfig,
     GoLocateConfig,
     LocateConfig,
@@ -11,7 +11,7 @@ from tenon.locate import (
     RustLocateConfig,
     TsLocateConfig,
 )
-from tenon.prove import ProofLevel
+from sdkfit.prove import ProofLevel
 
 LOCATE_TYPES = {
     "python": LocateConfig,
@@ -77,7 +77,7 @@ def a_config(
 
 
 def a_file(tmp_path, text):
-    path = tmp_path / "tenon.toml"
+    path = tmp_path / "sdkfit.toml"
     path.write_text(text)
     return path
 
@@ -104,12 +104,12 @@ def test_minimal_file_defaults_to_python(tmp_path):
     assert isinstance(config.locate, LocateConfig)
 
 
-# Spec AC2: the file selects TypeScript and still reads every [tenon] key.
-def test_file_selects_ts_and_keeps_the_tenon_keys(tmp_path):
+# Spec AC2: the file selects TypeScript and still reads every [sdkfit] key.
+def test_file_selects_ts_and_keeps_the_sdkfit_keys(tmp_path):
     path = a_file(
         tmp_path,
         '[locate]\nlanguage = "ts"\nsdk_package = "stripe"\n'
-        '\n[tenon]\ncommand = ["npm", "test"]\nrequire = "UNVERIFIED"\n'
+        '\n[sdkfit]\ncommand = ["npm", "test"]\nrequire = "UNVERIFIED"\n'
         "breaking_only = true\n",
     )
 
@@ -470,7 +470,7 @@ def test_ts_config_keeps_the_operation_tables(tmp_path):
     assert dict(config.locate.fields) == {"Charge.amount": "amount_cents"}
 
 
-# Spec AC2: every table and every [tenon] key round-trips.
+# Spec AC2: every table and every [sdkfit] key round-trips.
 def test_full_file_round_trips(tmp_path):
     path = a_file(
         tmp_path,
@@ -480,7 +480,7 @@ def test_full_file_round_trips(tmp_path):
         '"DELETE /v1/charges/{id}" = "charges.delete"\n'
         "\n[locate.fields]\n"
         '"Charge.amount" = "amount_cents"\n'
-        "\n[tenon]\n"
+        "\n[sdkfit]\n"
         'command = ["python", "-m", "pytest", "-q"]\n'
         'require = "UNVERIFIED"\n'
         "breaking_only = true\n",
@@ -498,12 +498,12 @@ def test_full_file_round_trips(tmp_path):
     )
 
 
-# Spec AC1: [tenon] carries one array per proof stage next to command.
+# Spec AC1: [sdkfit] carries one array per proof stage next to command.
 def test_file_loads_every_stage_command(tmp_path):
     path = a_file(
         tmp_path,
         '[locate]\nsdk_package = "stripe"\n'
-        "\n[tenon]\n"
+        "\n[sdkfit]\n"
         'command = ["pytest"]\n'
         'build = ["python", "-c", "import acme"]\n'
         'characterize = ["python", "-c", "characterize"]\n'
@@ -518,12 +518,12 @@ def test_file_loads_every_stage_command(tmp_path):
     assert config.replay == ("python", "-c", "replay")
 
 
-# Spec AC2: every ladder level is a valid [tenon] require.
+# Spec AC2: every ladder level is a valid [sdkfit] require.
 @pytest.mark.parametrize("level", list(ProofLevel))
 def test_file_accepts_every_proof_level(tmp_path, level):
     path = a_file(
         tmp_path,
-        f'[locate]\nsdk_package = "stripe"\n\n[tenon]\nrequire = "{level.value}"\n',
+        f'[locate]\nsdk_package = "stripe"\n\n[sdkfit]\nrequire = "{level.value}"\n',
     )
 
     assert load_cli_config(path).require is level
@@ -533,7 +533,7 @@ def test_file_accepts_every_proof_level(tmp_path, level):
 @pytest.mark.parametrize(
     ("text", "key"),
     [
-        ("[tenon]\ncommand = []\n", "[locate]"),
+        ("[sdkfit]\ncommand = []\n", "[locate]"),
         ("[locate]\noperations = {}\n", "sdk_package"),
         ('locate = "stripe"\n', "[locate]"),
         (
@@ -541,37 +541,37 @@ def test_file_accepts_every_proof_level(tmp_path, level):
             "operations",
         ),
         ('[locate]\nsdk_package = "stripe"\nfields = ["x"]\n', "fields"),
-        ('tenon = true\n[locate]\nsdk_package = "stripe"\n', "[tenon]"),
+        ('sdkfit = true\n[locate]\nsdk_package = "stripe"\n', "[sdkfit]"),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\ncommand = "pytest"\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\ncommand = "pytest"\n',
             "command",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\ncommand = ["pytest", ""]\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\ncommand = ["pytest", ""]\n',
             "command",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\ncommand = ["pytest", 1]\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\ncommand = ["pytest", 1]\n',
             "command",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\nbuild = "python"\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\nbuild = "python"\n',
             "build",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\ncharacterize = [""]\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\ncharacterize = [""]\n',
             "characterize",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\nreplay = [1]\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\nreplay = [1]\n',
             "replay",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\nbreaking_only = "yes"\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\nbreaking_only = "yes"\n',
             "breaking_only",
         ),
         (
-            '[locate]\nsdk_package = "stripe"\n\n[tenon]\nrequire = "BY_HAND"\n',
+            '[locate]\nsdk_package = "stripe"\n\n[sdkfit]\nrequire = "BY_HAND"\n',
             "TYPES_BUILD_ONLY",
         ),
     ],
@@ -623,7 +623,7 @@ def test_load_cli_config_validates_a_parse_error(tmp_path):
 
 # Spec AC3: a missing file is one ValueError that names the path.
 def test_load_cli_config_validates_a_missing_file(tmp_path):
-    path = tmp_path / "tenon.toml"
+    path = tmp_path / "sdkfit.toml"
 
     with pytest.raises(ValueError, match=re.escape(str(path))):
         load_cli_config(path)
@@ -1034,20 +1034,20 @@ def test_overrides_rejects_bad_flags(kwargs, key):
         overrides(a_config(), **kwargs)
 
 
-# Spec AC6: --config wins even when the repo has its own tenon.toml.
+# Spec AC6: --config wins even when the repo has its own sdkfit.toml.
 def test_resolve_config_path_prefers_the_explicit_file(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
-    (repo / "tenon.toml").write_text('[locate]\nsdk_package = "stripe"\n')
+    (repo / "sdkfit.toml").write_text('[locate]\nsdk_package = "stripe"\n')
     explicit = tmp_path / "explicit.toml"
     explicit.write_text('[locate]\nsdk_package = "chargebee"\n')
 
     assert resolve_config_path(repo, str(explicit)) == explicit
 
 
-# Spec AC6: otherwise <repo>/tenon.toml is found when present.
+# Spec AC6: otherwise <repo>/sdkfit.toml is found when present.
 def test_resolve_config_path_finds_the_repo_file(tmp_path):
-    path = tmp_path / "tenon.toml"
+    path = tmp_path / "sdkfit.toml"
     path.write_text('[locate]\nsdk_package = "stripe"\n')
 
     assert resolve_config_path(tmp_path, None) == path

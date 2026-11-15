@@ -2,7 +2,7 @@
 
 import pytest
 
-from tenon.locate.rust_config import RustLocateConfig
+from sdkfit.locate.rust_config import RustLocateConfig
 
 
 def a_config(**kwargs):

@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location, diff_mcp
-from tenon.locate.mcp_config import McpLocateConfig
-from tenon.locate.mcp_locate import locate_mcp
-from tenon.locate.mcp_scan import McpScan
-from tenon.locate.result import (
+from sdkfit.detect import Change, ChangeKind, Location, diff_mcp
+from sdkfit.locate.mcp_config import McpLocateConfig
+from sdkfit.locate.mcp_locate import locate_mcp
+from sdkfit.locate.mcp_scan import McpScan
+from sdkfit.locate.result import (
     AmbiguityReason,
     LocateReason,
     Site,
@@ -84,7 +84,7 @@ def test_config_rejects_a_non_package_name(name):
 
 # Spec AC5: a change that is not a tool is unsupported before the scan.
 def test_a_non_tool_change_is_unsupported(monkeypatch):
-    import tenon.locate.mcp_locate as mcp_locate_module
+    import sdkfit.locate.mcp_locate as mcp_locate_module
 
     monkeypatch.setattr(
         mcp_locate_module, "scan_mcp", lambda *args: pytest.fail("must not scan")
@@ -114,7 +114,7 @@ def test_a_tool_change_without_a_path_is_unsupported():
 
 # Spec AC5: a tool change runs the scan with the configured package.
 def test_a_tool_change_scans_the_repository(monkeypatch):
-    import tenon.locate.mcp_locate as mcp_locate_module
+    import sdkfit.locate.mcp_locate as mcp_locate_module
 
     calls = []
 
@@ -490,8 +490,8 @@ def a_site_key(site):
 
 # Spec AC7: the public surface exports the config and the locator.
 def test_the_public_surface_exports_the_mcp_locator():
-    from tenon.locate import McpLocateConfig as exported_config
-    from tenon.locate import locate_mcp as exported_locate
+    from sdkfit.locate import McpLocateConfig as exported_config
+    from sdkfit.locate import locate_mcp as exported_locate
 
     assert exported_config is McpLocateConfig
     assert exported_locate is locate_mcp
@@ -510,8 +510,8 @@ def test_two_runs_produce_identical_json():
 
 
 HASH_SEED_SCRIPT = """
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import McpLocateConfig, locate_mcp
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import McpLocateConfig, locate_mcp
 
 change = Change(
     kind=ChangeKind.PROPERTY_REMOVED,

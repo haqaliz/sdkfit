@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tenon.probe.agent import AgentError, PlanCall, run_agent
+from sdkfit.probe.agent import AgentError, PlanCall, run_agent
 
 AGENT = Path(__file__).parent.parent / "fixtures" / "mcp" / "probe_agent.py"
 
@@ -113,10 +113,10 @@ def test_a_timeout_is_a_named_agent_failure():
 # Spec AC2: an unreachable agent command is a spawn failure, not a traceback.
 def test_a_command_that_cannot_spawn_is_an_agent_error():
     with pytest.raises(AgentError) as caught:
-        run_agent(["/tenon-no-such-agent-xyz"], a_request(), timeout=5)
+        run_agent(["/sdkfit-no-such-agent-xyz"], a_request(), timeout=5)
 
     assert caught.value.reason == "AGENT_SPAWN_FAILED"
-    assert "tenon-no-such-agent-xyz" in caught.value.detail
+    assert "sdkfit-no-such-agent-xyz" in caught.value.detail
 
 
 def test_a_string_command_is_rejected():

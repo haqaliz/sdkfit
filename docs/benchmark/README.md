@@ -1,25 +1,25 @@
-# The Tenon benchmark corpus
+# The SDK Fit benchmark corpus
 
-`corpus.jsonl` is the labelled history of changes Tenon proposed and proved: one JSON object per
+`corpus.jsonl` is the labelled history of changes SDK Fit proposed and proved: one JSON object per
 line, one record per change. Each record carries the change, the proposed diff, the proof result,
 the PR (if any), the human outcome, the date and the evidence. The record id is the first 12 hex of
 the canonical `(repo, commit, change, diff)` hash, so an outcome update never changes it.
 
 ## Record and update
 
-Record a `tenon fix --json` run once the change and its proof are known:
+Record a `sdkfit fix --json` run once the change and its proof are known:
 
 ```sh
-tenon corpus record --from fix.json --repo https://github.com/o/r --commit SHA \
+sdkfit corpus record --from fix.json --repo https://github.com/o/r --commit SHA \
   --outcome local_only --date 2026-11-07 --corpus corpus.jsonl \
   --evidence docs/planning/.../evidence.md --notes "focused test, no PR"
 ```
 
-The outcome is a human statement, not a Tenon inference. Update it by id after a human merge,
+The outcome is a human statement, not a SDK Fit inference. Update it by id after a human merge,
 reject, close or incident:
 
 ```sh
-tenon corpus outcome --corpus corpus.jsonl --id <id> --outcome merged \
+sdkfit corpus outcome --corpus corpus.jsonl --id <id> --outcome merged \
   --outcome-url https://github.com/o/r/pull/1
 ```
 
@@ -45,8 +45,8 @@ first datum.
 ## Report
 
 ```sh
-tenon corpus report --corpus docs/benchmark/corpus.jsonl
-tenon corpus report --corpus docs/benchmark/corpus.jsonl --json
+sdkfit corpus report --corpus docs/benchmark/corpus.jsonl
+sdkfit corpus report --corpus docs/benchmark/corpus.jsonl --json
 ```
 
 The text report has one row per proof level and the outcome counts; the JSON report is byte-stable

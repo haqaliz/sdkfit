@@ -1,4 +1,4 @@
-# Releasing Tenon
+# Releasing SDK Fit
 
 Releases are tag-driven: a `v*` tag runs `.github/workflows/release.yml`, which tests, builds,
 attaches the wheel/sdist to the GitHub release and optionally publishes to PyPI. The local checklist
@@ -29,7 +29,7 @@ artifact. The PR must be green before merging.
 
    ```sh
    uv sync
-   uv run tenon --version
+   uv run sdkfit --version
    ```
 
 3. **Changelog.** The release body is the `## [x.y.z]` section; review the shipped capabilities and
@@ -41,9 +41,9 @@ artifact. The PR must be green before merging.
    uv build
    tmp=$(mktemp -d)
    uv venv "$tmp/venv"
-   uv pip install --python "$tmp/venv/bin/python" --quiet dist/tenonhq-*.whl
-   "$tmp/venv/bin/tenon" --version
-   "$tmp/venv/bin/tenon" check --help
+   uv pip install --python "$tmp/venv/bin/python" --quiet dist/sdkfit-*.whl
+   "$tmp/venv/bin/sdkfit" --version
+   "$tmp/venv/bin/sdkfit" check --help
    rm -rf "$tmp"
    ```
 
@@ -61,7 +61,7 @@ artifact. The PR must be green before merging.
 6. **Tag the merge commit** (annotated; push the tag). The tag starts the release workflow.
 
    ```sh
-   git tag -a vX.Y.Z -m "Tenon vX.Y.Z"
+   git tag -a vX.Y.Z -m "SDK Fit vX.Y.Z"
    git push origin vX.Y.Z
    ```
 
@@ -78,8 +78,8 @@ artifact. The PR must be green before merging.
 8. **PyPI (optional).** The `publish` job uses **trusted publishing** (OIDC) and is skipped unless
    the `PYPI_PUBLISH` repository variable is `true`. One-time setup on PyPI:
 
-   - The `tenonhq` project exists (create/reserve the name on your PyPI account).
-   - Add a trusted publisher: owner `haqaliz`, repository `tenon`, workflow `release.yml`,
+   - The `sdkfit` project exists (create/reserve the name on your PyPI account).
+   - Add a trusted publisher: owner `haqaliz`, repository `sdkfit`, workflow `release.yml`,
      environment `pypi`.
    - Create the `pypi` environment in GitHub (add reviewers if you want a manual approval).
    - Set the `PYPI_PUBLISH` repository variable to `true` only when you are ready to publish.
@@ -91,12 +91,12 @@ artifact. The PR must be green before merging.
    Verify the install after the workflow:
 
    ```sh
-   pip install tenonhq==X.Y.Z
-   tenon --version
+   pip install sdkfit==X.Y.Z
+   sdkfit --version
    ```
 
 9. **Verify** the release page/assets, the version badge, the changelog link, the container image
-   (`ghcr.io/haqaliz/tenon:X.Y.Z`) and (if enabled) the PyPI version.
+   (`ghcr.io/haqaliz/sdkfit:X.Y.Z`) and (if enabled) the PyPI version.
 
 ## Launch assets
 
@@ -110,8 +110,8 @@ If the workflow is unavailable, the old path still works: push the tag and creat
 manually with the changelog section as the body, then upload the artifacts.
 
 ```sh
-awk '/^## \[x.y.z\]/{flag=1; next} flag && /^## \[/{exit} flag' CHANGELOG.md > /tmp/tenon-notes.md
-gh release create vX.Y.Z --title "vX.Y.Z" --notes-file /tmp/tenon-notes.md dist/*
+awk '/^## \[x.y.z\]/{flag=1; next} flag && /^## \[/{exit} flag' CHANGELOG.md > /tmp/sdkfit-notes.md
+gh release create vX.Y.Z --title "vX.Y.Z" --notes-file /tmp/sdkfit-notes.md dist/*
 ```
 
 ## Notes

@@ -5,9 +5,9 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from tenon.prove import tail
-from tenon.service import runner as runner_module
-from tenon.service.runner import CommandRunner, Outcome
+from sdkfit.prove import tail
+from sdkfit.service import runner as runner_module
+from sdkfit.service.runner import CommandRunner, Outcome
 
 
 def a_process(*, returncode=0, stdout="", stderr="", timeouts=0, waits=0):
@@ -27,7 +27,7 @@ def a_process(*, returncode=0, stdout="", stderr="", timeouts=0, waits=0):
             self.communicate_calls.append(timeout)
             if self._timeouts:
                 self._timeouts -= 1
-                raise subprocess.TimeoutExpired(["tenon"], timeout)
+                raise subprocess.TimeoutExpired(["sdkfit"], timeout)
             self.returncode = returncode
             return stdout, stderr
 
@@ -35,7 +35,7 @@ def a_process(*, returncode=0, stdout="", stderr="", timeouts=0, waits=0):
             self.wait_calls.append(timeout)
             if self._waits:
                 self._waits -= 1
-                raise subprocess.TimeoutExpired(["tenon"], timeout)
+                raise subprocess.TimeoutExpired(["sdkfit"], timeout)
             self.returncode = returncode
             return returncode
 
@@ -55,7 +55,7 @@ def a_popen(process):
 
 def a_runner(process):
     calls, popen = a_popen(process)
-    builder = lambda bundle: ["tenon", "provider", "migrate", str(bundle)]  # noqa: E731
+    builder = lambda bundle: ["sdkfit", "provider", "migrate", str(bundle)]  # noqa: E731
     return CommandRunner(builder, popen=popen), calls
 
 
@@ -94,7 +94,7 @@ def test_run_builds_the_argv_and_runs_in_a_new_session(tmp_path):
     outcome = runner.run(bundle)
 
     (argv, kwargs), = calls
-    assert argv == ["tenon", "provider", "migrate", str(bundle)]
+    assert argv == ["sdkfit", "provider", "migrate", str(bundle)]
     assert kwargs == {
         "stdout": subprocess.PIPE,
         "stderr": subprocess.PIPE,
@@ -191,7 +191,7 @@ def test_a_timeout_stops_the_group_and_is_a_named_error(tmp_path, monkeypatch):
     process = a_process(timeouts=2)
     _calls, popen = a_popen(process)
     runner = CommandRunner(
-        lambda bundle: ["tenon", str(bundle)],
+        lambda bundle: ["sdkfit", str(bundle)],
         timeout=5.0,
         popen=popen,
         clock=a_clock(0, 0, 100),
@@ -209,7 +209,7 @@ def test_a_cancel_stops_the_group_and_marks_the_outcome(tmp_path, monkeypatch):
     signals = a_signals(monkeypatch)
     process = a_process(timeouts=1)
     _calls, popen = a_popen(process)
-    runner = CommandRunner(lambda bundle: ["tenon", str(bundle)], popen=popen)
+    runner = CommandRunner(lambda bundle: ["sdkfit", str(bundle)], popen=popen)
 
     outcome = runner.run(tmp_path / "bundle.json", cancel=lambda: True)
 
@@ -222,7 +222,7 @@ def test_a_cancel_stops_the_group_and_marks_the_outcome(tmp_path, monkeypatch):
 def test_a_false_cancel_predicate_keeps_waiting(tmp_path):
     process = a_process(timeouts=2, stdout='{"command":"provider"}')
     _calls, popen = a_popen(process)
-    runner = CommandRunner(lambda bundle: ["tenon", str(bundle)], popen=popen)
+    runner = CommandRunner(lambda bundle: ["sdkfit", str(bundle)], popen=popen)
     answers = iter([False, False])
 
     outcome = runner.run(tmp_path / "bundle.json", cancel=lambda: next(answers))
@@ -236,7 +236,7 @@ def test_a_stop_escalates_to_sigkill(tmp_path, monkeypatch):
     signals = a_signals(monkeypatch)
     process = a_process(timeouts=1, waits=1)
     _calls, popen = a_popen(process)
-    runner = CommandRunner(lambda bundle: ["tenon", str(bundle)], popen=popen)
+    runner = CommandRunner(lambda bundle: ["sdkfit", str(bundle)], popen=popen)
 
     outcome = runner.run(tmp_path / "bundle.json", cancel=lambda: True)
 
@@ -253,7 +253,7 @@ def test_a_missing_group_is_not_an_error(tmp_path, monkeypatch):
     monkeypatch.setattr(runner_module.os, "killpg", missing)
     process = a_process(timeouts=1)
     _calls, popen = a_popen(process)
-    runner = CommandRunner(lambda bundle: ["tenon", str(bundle)], popen=popen)
+    runner = CommandRunner(lambda bundle: ["sdkfit", str(bundle)], popen=popen)
 
     outcome = runner.run(tmp_path / "bundle.json", cancel=lambda: True)
 
@@ -266,13 +266,13 @@ def test_an_oserror_is_a_named_error(tmp_path):
     def missing(_argv, **_kwargs):
         raise FileNotFoundError(2, "No such file or directory")
 
-    runner = CommandRunner(lambda bundle: ["/missing/tenon"], popen=missing)
+    runner = CommandRunner(lambda bundle: ["/missing/sdkfit"], popen=missing)
 
     outcome = runner.run(tmp_path / "bundle.json")
 
     assert outcome.exit is None
     assert outcome.report is None
-    assert outcome.error.startswith("cannot run /missing/tenon: ")
+    assert outcome.error.startswith("cannot run /missing/sdkfit: ")
 
 
 # Spec AC2: the error is capped with the shared tail helper.
@@ -297,7 +297,7 @@ def test_the_default_popen_is_subprocess_popen(tmp_path, monkeypatch):
         return process
 
     monkeypatch.setattr(subprocess, "Popen", fake_popen)
-    runner = CommandRunner(lambda bundle: ["tenon", str(bundle)])
+    runner = CommandRunner(lambda bundle: ["sdkfit", str(bundle)])
 
     outcome = runner.run(tmp_path / "bundle.json")
 

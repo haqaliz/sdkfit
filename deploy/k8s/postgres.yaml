@@ -1,16 +1,16 @@
 # A portable single-instance Postgres for demos and small installs.
 # Production should use a managed, backed-up, highly available database; point
-# TENON_DATABASE_URL at it and skip this file.
+# SDKFIT_DATABASE_URL at it and skip this file.
 apiVersion: v1
 kind: Service
 metadata:
-  name: tenon-postgres
+  name: sdkfit-postgres
   labels:
-    app: tenon-postgres
+    app: sdkfit-postgres
 spec:
   clusterIP: None
   selector:
-    app: tenon-postgres
+    app: sdkfit-postgres
   ports:
     - name: postgres
       port: 5432
@@ -19,19 +19,19 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tenon-postgres
+  name: sdkfit-postgres
   labels:
-    app: tenon-postgres
+    app: sdkfit-postgres
 spec:
-  serviceName: tenon-postgres
+  serviceName: sdkfit-postgres
   replicas: 1
   selector:
     matchLabels:
-      app: tenon-postgres
+      app: sdkfit-postgres
   template:
     metadata:
       labels:
-        app: tenon-postgres
+        app: sdkfit-postgres
     spec:
       securityContext:
         fsGroup: 999
@@ -43,17 +43,17 @@ spec:
               containerPort: 5432
           env:
             - name: POSTGRES_DB
-              value: tenon
+              value: sdkfit
             - name: POSTGRES_USER
-              value: tenon
+              value: sdkfit
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: tenon-secrets
+                  name: sdkfit-secrets
                   key: postgres-password
           readinessProbe:
             exec:
-              command: ["sh", "-c", "pg_isready -U tenon -d tenon"]
+              command: ["sh", "-c", "pg_isready -U sdkfit -d sdkfit"]
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:

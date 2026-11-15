@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tenon.probe import McpStdioClient, ProbeError
+from sdkfit.probe import McpStdioClient, ProbeError
 
 SERVER = Path(__file__).parent.parent / "fixtures" / "mcp" / "probe_server.py"
 
@@ -192,10 +192,10 @@ def test_close_stops_the_server_and_captures_the_stderr_tail(client):
 # Spec AC4: an unreachable command is a spawn failure, not a traceback.
 def test_a_command_that_cannot_spawn_raises_probe_error(client):
     with pytest.raises(ProbeError) as caught:
-        client.start(["/tenon-no-such-server-xyz"], timeout=5)
+        client.start(["/sdkfit-no-such-server-xyz"], timeout=5)
 
     assert caught.value.reason == "spawn_failed"
-    assert "tenon-no-such-server-xyz" in caught.value.detail
+    assert "sdkfit-no-such-server-xyz" in caught.value.detail
 
 
 # Spec AC4: an empty command is a spawn failure, not an IndexError.

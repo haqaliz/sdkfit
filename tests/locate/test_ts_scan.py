@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from tenon.locate import SiteShape
-from tenon.locate.scan import Dynamic, DynamicKind, Hit, _Source
-from tenon.locate.ts_scan import (
+from sdkfit.locate import SiteShape
+from sdkfit.locate.scan import Dynamic, DynamicKind, Hit, _Source
+from sdkfit.locate.ts_scan import (
     _Visitor,
     _aliases,
     _bindings,

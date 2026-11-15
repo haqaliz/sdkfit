@@ -1,4 +1,4 @@
-# Tenon: Roadmap
+# SDK Fit: Roadmap
 
 Goal: **reputation and moat** in about 3 months, in parallel with Assay and Pry, so each project
 moves at a fraction of full speed. Form: OSS CLI first, GitHub App and hosted later. Stack:
@@ -14,27 +14,27 @@ Milestone order is my proposal; reorder freely.
 
 | # | Milestone | Done when | State |
 |---|---|---|---|
-| M0.1 | OpenAPI differ (T1) | Two spec versions diff into typed change records (removed, renamed, required-added, type-changed); unparseable input is a named refusal | **Shipped 2026-10-26** (`src/tenon/detect/`, 136 tests) |
-| M0.2 | Python call-site locator (T2) | Given a change, finds usages in a Python repo with file and line; ambiguity is reported, never guessed | **Shipped 2026-10-29** (`src/tenon/locate/`, 207 tests) |
+| M0.1 | OpenAPI differ (T1) | Two spec versions diff into typed change records (removed, renamed, required-added, type-changed); unparseable input is a named refusal | **Shipped 2026-10-26** (`src/sdkfit/detect/`, 136 tests) |
+| M0.2 | Python call-site locator (T2) | Given a change, finds usages in a Python repo with file and line; ambiguity is reported, never guessed | **Shipped 2026-10-29** (`src/sdkfit/locate/`, 207 tests) |
 | M0.3 | One end-to-end case | A real public SDK change applied to a real repo, with the repo's tests as proof | **Shipped 2026-11-05:** two real cases: `fighthealthinsurance/fighthealthinsurance` @ `56e69cf` (3 certain sites, 3-edit diff, `TESTS_PASSED` on `tests/sync/test_pwyw_checkout.py`) and `yezz123/stripe-template` @ `9d9178c` (mock-assertion site, `TESTS_PASSED` on the offline subset); see `docs/planning/m0-3-first-real-case/evidence.md` and `docs/planning/m0-3-real-case/evidence.md` |
 
 ## Phase 1: OSS core (weeks 4-8)
 
 | # | Milestone | Done when | State |
 |---|---|---|---|
-| M1.1 | Patch proposer seam (T3) | Pluggable proposer (rule-based first, BYOK model optional); output is a diff, never applied unverified | **Shipped 2026-10-29** (`src/tenon/propose/`, 114 tests) |
-| M1.2 | Proof runner (T4) | Runs tests in an isolated working copy; records `TESTS_PASSED` or `UNVERIFIED` with a cause | **Shipped 2026-10-29** (`src/tenon/prove/`, 105 tests) |
-| M1.3 | PR writer (T5) | Opens a branch and PR stating the proof level; never touches `master` | **Shipped 2026-11-05** (`src/tenon/pr/`, 745 tests; local bare-remote end-to-end, no live GitHub call) |
-| M1.4 | `tenon check` / `tenon fix` CLI | Exit codes reflect proof; JSON output byte-stable | **Shipped 2026-11-05** (`src/tenon/cli/`, 870 tests; text + byte-stable JSON) |
+| M1.1 | Patch proposer seam (T3) | Pluggable proposer (rule-based first, BYOK model optional); output is a diff, never applied unverified | **Shipped 2026-10-29** (`src/sdkfit/propose/`, 114 tests) |
+| M1.2 | Proof runner (T4) | Runs tests in an isolated working copy; records `TESTS_PASSED` or `UNVERIFIED` with a cause | **Shipped 2026-10-29** (`src/sdkfit/prove/`, 105 tests) |
+| M1.3 | PR writer (T5) | Opens a branch and PR stating the proof level; never touches `master` | **Shipped 2026-11-05** (`src/sdkfit/pr/`, 745 tests; local bare-remote end-to-end, no live GitHub call) |
+| M1.4 | `sdkfit check` / `sdkfit fix` CLI | Exit codes reflect proof; JSON output byte-stable | **Shipped 2026-11-05** (`src/sdkfit/cli/`, 870 tests; text + byte-stable JSON) |
 
 ## Phase 2: Breadth and proof depth (weeks 8-12)
 
 | # | Milestone | Done when | State |
 |---|---|---|---|
-| M2.1 | TypeScript/JavaScript locator (T6) | Same contract as the Python locator | **Shipped 2026-11-05** (`src/tenon/locate/ts_*.py`, 1,006 tests) |
-| M2.2 | Weaker and stronger proofs (T7) | Types/build-only, characterization tests, recorded-call replay, each labelled | **Shipped 2026-11-06** (`src/tenon/prove/`, CLI/PR integration, 1,178 tests) |
-| M2.3 | MCP schema diffs and `tenon probe` (T8) | Agent run against an MCP server or API; reports what worked | **Shipped 2026-11-07** (MCP tool-schema diffs + tool-call locator + `tenon probe`, `src/tenon/detect/mcp_*.py`, `src/tenon/locate/mcp_*.py`, `src/tenon/probe/`, 1,436 tests) |
-| M2.4 | Benchmark of (change, patch, proof, outcome) | Public set of real changes with how often each proof level held | **Shipped 2026-11-07** (`src/tenon/corpus/`, `docs/benchmark/corpus.jsonl`, 1,571 tests; two public local-only seeds, no merge rate yet) |
+| M2.1 | TypeScript/JavaScript locator (T6) | Same contract as the Python locator | **Shipped 2026-11-05** (`src/sdkfit/locate/ts_*.py`, 1,006 tests) |
+| M2.2 | Weaker and stronger proofs (T7) | Types/build-only, characterization tests, recorded-call replay, each labelled | **Shipped 2026-11-06** (`src/sdkfit/prove/`, CLI/PR integration, 1,178 tests) |
+| M2.3 | MCP schema diffs and `sdkfit probe` (T8) | Agent run against an MCP server or API; reports what worked | **Shipped 2026-11-07** (MCP tool-schema diffs + tool-call locator + `sdkfit probe`, `src/sdkfit/detect/mcp_*.py`, `src/sdkfit/locate/mcp_*.py`, `src/sdkfit/probe/`, 1,436 tests) |
+| M2.4 | Benchmark of (change, patch, proof, outcome) | Public set of real changes with how often each proof level held | **Shipped 2026-11-07** (`src/sdkfit/corpus/`, `docs/benchmark/corpus.jsonl`, 1,571 tests; two public local-only seeds, no merge rate yet) |
 
 ## Phase 3: Provider layer (after the window)
 
@@ -46,14 +46,15 @@ locator), T11b (Go locator) and T11c (C# locator) shipped 2026-11-11; T12a (Rust
 tracking) and T12b (C#/Python/TS receiver tracking) shipped 2026-11-12; T12c (annotated return-type
 inference) and T12d (typed-parameter inference) shipped 2026-11-14; T12e (cross-file signatures and
 closures) shipped 2026-11-15**
-(`src/tenon/pr/{app,api,github_app,installed}.py`, `src/tenon/provider/`, `src/tenon/service/`,
-`src/tenon/locate/`, `Dockerfile`/`docker-compose.yml`/`Caddyfile`, CLI; 2,558 tests). T13a (a
+(`src/sdkfit/pr/{app,api,github_app,installed}.py`, `src/sdkfit/provider/`, `src/sdkfit/service/`,
+`src/sdkfit/locate/`, `Dockerfile`/`docker-compose.yml`/`Caddyfile`, CLI; 2,558 tests). T13a (a
 deployable service behind Caddy) and T13b (workers/retries/cancel/metrics/SQLite hardening) shipped
 2026-11-12; T10f (webhook-triggered runs) shipped 2026-11-14; T14 (CI and release pipeline) shipped
 2026-11-14; T15 (Postgres store, `--database-url` and Kubernetes manifests) shipped 2026-11-16. The
 service is containerized, resilient, event-triggerable and horizontally scalable; repo-wide
-cross-package receiver indexes are not. T16 (launch readiness) is ready: PyPI trusted publishing, a
-GHCR image job, the offline demo and the launch kit; the launch name decision is open.
+cross-package receiver indexes are not. T16 (launch readiness) and T17 (rename to SDK Fit) are
+ready: PyPI trusted publishing, a GHCR image job, the offline demo, the launch kit and a resolved
+`SDK Fit`/`sdkfit` name.
 
 **v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15; v0.4.0 released 2026-11-16**
 — see `CHANGELOG.md` and `docs/RELEASE.md`.

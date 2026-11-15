@@ -7,9 +7,9 @@ same rename, so the test stays small and offline.
 
 from pathlib import Path
 
-from tenon.detect import ChangeKind, diff, parse
-from tenon.locate import LocateConfig, SiteShape, locate
-from tenon.propose import propose
+from sdkfit.detect import ChangeKind, diff, parse
+from sdkfit.locate import LocateConfig, SiteShape, locate
+from sdkfit.propose import propose
 
 FIXTURE = Path(__file__).parent.parent / "fixtures" / "repos" / "real-stripe-template"
 CONFIG = LocateConfig(

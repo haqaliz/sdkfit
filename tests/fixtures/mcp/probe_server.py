@@ -105,7 +105,7 @@ def main(argv=None):
             if (
                 params.get("protocolVersion") != "2025-06-18"
                 or params.get("capabilities") != {}
-                or client.get("name") != "tenon"
+                or client.get("name") != "sdkfit"
                 or not client.get("version")
             ):
                 send_error(request_id, INVALID_PARAMS, "bad initialize params")

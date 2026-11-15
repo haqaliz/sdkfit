@@ -5,8 +5,8 @@ import subprocess
 
 import pytest
 
-from tenon.pr.remote import GitGhRemote, RemoteError
-from tenon.prove import tail
+from sdkfit.pr.remote import GitGhRemote, RemoteError
+from sdkfit.prove import tail
 
 
 def a_completed(argv=("git",), returncode=0, stdout="", stderr=""):
@@ -32,10 +32,10 @@ class FakeRunner:
 def test_push_builds_the_exact_argv_and_env(tmp_path):
     runner = FakeRunner(a_completed())
 
-    GitGhRemote(runner=runner).push(tmp_path, "tenon/renamed-x-12345678")
+    GitGhRemote(runner=runner).push(tmp_path, "sdkfit/renamed-x-12345678")
 
     argv, kwargs = runner.calls[0]
-    assert argv == ["git", "push", "--set-upstream", "origin", "tenon/renamed-x-12345678"]
+    assert argv == ["git", "push", "--set-upstream", "origin", "sdkfit/renamed-x-12345678"]
     assert kwargs["cwd"] == tmp_path
     assert kwargs["capture_output"] is True
     assert kwargs["text"] is True
@@ -53,7 +53,7 @@ def test_push_rejects_a_non_zero_exit_with_the_capped_tail(tmp_path):
     runner = FakeRunner(a_completed(returncode=1, stderr=stderr))
 
     with pytest.raises(RemoteError) as raised:
-        GitGhRemote(runner=runner).push(tmp_path, "tenon/x")
+        GitGhRemote(runner=runner).push(tmp_path, "sdkfit/x")
 
     assert raised.value.detail == tail(stderr)
     assert "fatal line 25" in raised.value.detail
@@ -66,7 +66,7 @@ def test_a_remote_error_caps_a_long_line(tmp_path):
     runner = FakeRunner(a_completed(returncode=1, stdout=line))
 
     with pytest.raises(RemoteError) as raised:
-        GitGhRemote(runner=runner).push(tmp_path, "tenon/x")
+        GitGhRemote(runner=runner).push(tmp_path, "sdkfit/x")
 
     assert len(raised.value.detail.splitlines()[0]) == 2000
 
@@ -78,9 +78,9 @@ def test_a_missing_binary_is_a_remote_error(tmp_path):
     with pytest.raises(RemoteError) as raised:
         GitGhRemote(runner=runner).create_pr(
             tmp_path,
-            branch="tenon/x",
+            branch="sdkfit/x",
             base="main",
-            title="[TESTS_PASSED] tenon: x",
+            title="[TESTS_PASSED] sdkfit: x",
             body="body\n",
             draft=False,
         )
@@ -93,7 +93,7 @@ def test_a_timeout_is_a_remote_error(tmp_path):
     runner = FakeRunner(subprocess.TimeoutExpired(["git", "push"], 60))
 
     with pytest.raises(RemoteError) as raised:
-        GitGhRemote(runner=runner).push(tmp_path, "tenon/x")
+        GitGhRemote(runner=runner).push(tmp_path, "sdkfit/x")
 
     assert raised.value.detail
 
@@ -103,13 +103,13 @@ def test_create_pr_builds_the_exact_argv_and_stdin(tmp_path):
     runner = FakeRunner(
         a_completed(stdout="warning: something\nhttps://github.com/o/r/pull/9\n\n")
     )
-    body = "## Tenon proof: TESTS_PASSED\n\nbody\n"
+    body = "## SDK Fit proof: TESTS_PASSED\n\nbody\n"
 
     url = GitGhRemote(runner=runner).create_pr(
         tmp_path,
-        branch="tenon/x",
+        branch="sdkfit/x",
         base="main",
-        title="[TESTS_PASSED] tenon: x",
+        title="[TESTS_PASSED] sdkfit: x",
         body=body,
         draft=False,
     )
@@ -123,9 +123,9 @@ def test_create_pr_builds_the_exact_argv_and_stdin(tmp_path):
         "--base",
         "main",
         "--head",
-        "tenon/x",
+        "sdkfit/x",
         "--title",
-        "[TESTS_PASSED] tenon: x",
+        "[TESTS_PASSED] sdkfit: x",
         "--body-file",
         "-",
     ]
@@ -144,9 +144,9 @@ def test_create_pr_adds_the_draft_flag_only_when_asked(tmp_path):
 
     GitGhRemote(runner=runner).create_pr(
         tmp_path,
-        branch="tenon/x",
+        branch="sdkfit/x",
         base="main",
-        title="[UNVERIFIED] tenon: x",
+        title="[UNVERIFIED] sdkfit: x",
         body="body\n",
         draft=True,
     )
@@ -163,9 +163,9 @@ def test_create_pr_rejects_a_non_zero_exit(tmp_path):
     with pytest.raises(RemoteError) as raised:
         GitGhRemote(runner=runner).create_pr(
             tmp_path,
-            branch="tenon/x",
+            branch="sdkfit/x",
             base="main",
-            title="[TESTS_PASSED] tenon: x",
+            title="[TESTS_PASSED] sdkfit: x",
             body="body\n",
             draft=False,
         )
@@ -180,9 +180,9 @@ def test_create_pr_rejects_an_unparseable_url(tmp_path):
     with pytest.raises(RemoteError) as raised:
         GitGhRemote(runner=runner).create_pr(
             tmp_path,
-            branch="tenon/x",
+            branch="sdkfit/x",
             base="main",
-            title="[TESTS_PASSED] tenon: x",
+            title="[TESTS_PASSED] sdkfit: x",
             body="body\n",
             draft=False,
         )
@@ -229,18 +229,18 @@ def test_default_branch_is_empty_when_both_sources_fail(tmp_path):
 # Spec AC6: exit 0 means the branch exists; exit 2 means it does not.
 def test_branch_exists_maps_git_exit_codes(tmp_path):
     runner = FakeRunner(a_completed(returncode=0))
-    assert GitGhRemote(runner=runner).branch_exists(tmp_path, "tenon/x") is True
+    assert GitGhRemote(runner=runner).branch_exists(tmp_path, "sdkfit/x") is True
     assert runner.calls[0][0] == [
         "git",
         "ls-remote",
         "--exit-code",
         "--heads",
         "origin",
-        "tenon/x",
+        "sdkfit/x",
     ]
 
     runner = FakeRunner(a_completed(returncode=2))
-    assert GitGhRemote(runner=runner).branch_exists(tmp_path, "tenon/x") is False
+    assert GitGhRemote(runner=runner).branch_exists(tmp_path, "sdkfit/x") is False
 
 
 # Spec AC6: any other exit is a RemoteError, never a silent branch decision.
@@ -248,6 +248,6 @@ def test_branch_exists_rejects_any_other_exit(tmp_path):
     runner = FakeRunner(a_completed(returncode=1, stderr="fatal: no remote"))
 
     with pytest.raises(RemoteError) as raised:
-        GitGhRemote(runner=runner).branch_exists(tmp_path, "tenon/x")
+        GitGhRemote(runner=runner).branch_exists(tmp_path, "sdkfit/x")
 
     assert "no remote" in raised.value.detail

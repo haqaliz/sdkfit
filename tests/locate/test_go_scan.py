@@ -2,9 +2,9 @@
 
 import pytest
 
-from tenon.locate import SiteShape
-from tenon.locate.go_scan import scan_go
-from tenon.locate.scan import Hit
+from sdkfit.locate import SiteShape
+from sdkfit.locate.go_scan import scan_go
+from sdkfit.locate.scan import Hit
 
 STRIPE = "github.com/stripe/stripe-go/v76"
 

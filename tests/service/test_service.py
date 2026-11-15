@@ -1,9 +1,9 @@
 import json
 
-from tenon.service.api import Api
-from tenon.service.runner import Outcome
-from tenon.service.store import RunStore
-from tenon.service.worker import Worker
+from sdkfit.service.api import Api
+from sdkfit.service.runner import Outcome
+from sdkfit.service.store import RunStore
+from sdkfit.service.worker import Worker
 
 TOKEN = "e2e-api-token"
 

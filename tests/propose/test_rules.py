@@ -3,9 +3,9 @@ import pathlib
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import AmbiguityReason, AmbiguousGroup, LocateReason, LocateResult, Site
-from tenon.propose import RuleProposer
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import AmbiguityReason, AmbiguousGroup, LocateReason, LocateResult, Site
+from sdkfit.propose import RuleProposer
 
 PROPOSER = RuleProposer()
 

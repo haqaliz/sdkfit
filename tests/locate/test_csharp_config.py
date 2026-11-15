@@ -2,7 +2,7 @@
 
 import pytest
 
-from tenon.locate.csharp_config import CSharpLocateConfig
+from sdkfit.locate.csharp_config import CSharpLocateConfig
 
 
 def a_config(**kwargs):

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import ChangeKind, UnanalyzedReason, diff
-from tenon.detect.ingest import load
+from sdkfit.detect import ChangeKind, UnanalyzedReason, diff
+from sdkfit.detect.ingest import load
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "specs"
 

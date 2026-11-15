@@ -4,8 +4,8 @@ import ast
 
 import pytest
 
-from tenon.locate import SiteShape
-from tenon.locate.scan import (
+from sdkfit.locate import SiteShape
+from sdkfit.locate.scan import (
     Dynamic,
     DynamicKind,
     Hit,

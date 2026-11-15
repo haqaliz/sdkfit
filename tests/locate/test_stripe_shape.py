@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, LocateReason, SiteShape, locate
-from tenon.propose import propose
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, LocateReason, SiteShape, locate
+from sdkfit.propose import propose
 
 ROOT = Path(__file__).parent.parent / "fixtures" / "repos" / "sdk-stripe-checkout"
 

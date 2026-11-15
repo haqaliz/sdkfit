@@ -5,7 +5,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-from tenon.detect.ingest import load, parse
+from sdkfit.detect.ingest import load, parse
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "specs"
 
@@ -70,8 +70,8 @@ def test_diffing_the_dag_reports_the_deep_change_once():
     # of hanging the suite.
     script = textwrap.dedent(
         f"""
-        from tenon.detect import ChangeKind, diff
-        from tenon.detect.ingest import load
+        from sdkfit.detect import ChangeKind, diff
+        from sdkfit.detect.ingest import load
 
         old = load({str(FIXTURES / "dag-old.yaml")!r})
         new = load({str(FIXTURES / "dag-new.yaml")!r})

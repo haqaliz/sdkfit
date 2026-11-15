@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, SiteShape, locate
-from tenon.propose import Edit, ProposalReason, RuleProposer, SkipReason, propose
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, SiteShape, locate
+from sdkfit.propose import Edit, ProposalReason, RuleProposer, SkipReason, propose
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "repos"
 SDK_BASIC = FIXTURES / "sdk-basic"

@@ -1,7 +1,7 @@
 """A component copy is the same resolved object, not merely equal JSON."""
 
-from tenon.detect import ChangeKind, diff
-from tenon.detect.ingest import parse
+from sdkfit.detect import ChangeKind, diff
+from sdkfit.detect.ingest import parse
 
 
 def parse_spec(schemas: str, paths: str = "paths: {}\n") -> dict:

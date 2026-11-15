@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from tenon.service import RunStore
-from tenon.service import postgres as postgres_module
-from tenon.service.postgres import PostgresRunStore
-from tenon.service.store import Store, StoreError
+from sdkfit.service import RunStore
+from sdkfit.service import postgres as postgres_module
+from sdkfit.service.postgres import PostgresRunStore
+from sdkfit.service.store import Store, StoreError
 
 NOW = datetime(2026, 11, 16, 12, 0, tzinfo=timezone.utc)
 STAMP = "2026-11-16T12:00:00+00:00"
@@ -95,7 +95,7 @@ def a_store(*responses, connection=None):
 
     return (
         PostgresRunStore(
-            "postgresql://db/tenon",
+            "postgresql://db/sdkfit",
             connect=connect,
             now=lambda: NOW,
             new_id=lambda: "run-1",
@@ -124,11 +124,11 @@ def test_an_injected_connection_needs_no_driver():
     connection = FakeConnection()
 
     PostgresRunStore(
-        "postgresql://db/tenon",
+        "postgresql://db/sdkfit",
         connect=lambda dsn: (seen.append(dsn), connection)[1],
     )
 
-    assert seen == ["postgresql://db/tenon"]
+    assert seen == ["postgresql://db/sdkfit"]
 
 
 # Spec AC4: a missing driver is a named StoreError, not a traceback.
@@ -143,7 +143,7 @@ def test_a_missing_driver_is_a_named_error(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", blocked)
 
     with pytest.raises(StoreError, match="postgres"):
-        PostgresRunStore("postgresql://db/tenon")
+        PostgresRunStore("postgresql://db/sdkfit")
 
 
 # Spec AC1/AC4: both backends satisfy the shared protocol.
@@ -462,7 +462,7 @@ def test_a_connection_error_is_a_named_error():
         raise OSError("no route to host")
 
     with pytest.raises(StoreError, match="connect"):
-        PostgresRunStore("postgresql://db/tenon", connect=connect)
+        PostgresRunStore("postgresql://db/sdkfit", connect=connect)
 
 
 def test_the_module_still_exposes_the_default_connect():

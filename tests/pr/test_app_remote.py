@@ -6,9 +6,9 @@ import subprocess
 
 import pytest
 
-from tenon.pr.app import StaticToken
-from tenon.pr.github_app import GitHubAppRemote
-from tenon.pr.remote import RemoteError
+from sdkfit.pr.app import StaticToken
+from sdkfit.pr.github_app import GitHubAppRemote
+from sdkfit.pr.remote import RemoteError
 
 API = "https://api.github.com"
 TOKEN = "ghs_installation"
@@ -149,10 +149,10 @@ def test_a_missing_default_branch_is_a_remote_error(tmp_path):
 def test_branch_exists_is_true_on_200(tmp_path):
     remote, _, transport = a_remote((200, {}, json.dumps({"ref": "refs/heads/x"})))
 
-    assert remote.branch_exists(tmp_path, "tenon/x") is True
+    assert remote.branch_exists(tmp_path, "sdkfit/x") is True
     assert (
         transport.calls[0][1]
-        == f"{API}/repos/acme/widgets/git/ref/heads/tenon/x"
+        == f"{API}/repos/acme/widgets/git/ref/heads/sdkfit/x"
     )
 
 
@@ -160,7 +160,7 @@ def test_branch_exists_is_true_on_200(tmp_path):
 def test_branch_exists_is_false_on_404(tmp_path):
     remote, _, _ = a_remote((404, {}, json.dumps({"message": "Not Found"})))
 
-    assert remote.branch_exists(tmp_path, "tenon/x") is False
+    assert remote.branch_exists(tmp_path, "sdkfit/x") is False
 
 
 # Spec AC2: any other API failure is a RemoteError, never a branch decision.
@@ -168,7 +168,7 @@ def test_a_failed_branch_check_is_a_remote_error(tmp_path):
     remote, _, _ = a_remote((500, {}, json.dumps({"message": "boom"})))
 
     with pytest.raises(RemoteError) as raised:
-        remote.branch_exists(tmp_path, "tenon/x")
+        remote.branch_exists(tmp_path, "sdkfit/x")
 
     assert "HTTP 500" in raised.value.detail
 
@@ -183,7 +183,7 @@ def test_the_installation_token_is_minted_once(tmp_path):
     )
 
     remote.default_branch(tmp_path)
-    remote.branch_exists(tmp_path, "tenon/x")
+    remote.branch_exists(tmp_path, "sdkfit/x")
 
     assert provider.calls == 1
     assert [call[2]["Authorization"] for call in transport.calls] == [
@@ -226,7 +226,7 @@ def test_an_unexpected_token_failure_is_a_remote_error(tmp_path):
 
 HELPER = (
     '!f() { echo "username=x-access-token"; '
-    'echo "password=$TENON_GITHUB_TOKEN"; }; f'
+    'echo "password=$SDKFIT_GITHUB_TOKEN"; }; f'
 )
 HELPER_CONFIG = f"credential.helper={HELPER}"
 
@@ -236,16 +236,16 @@ HELPER_CONFIG = f"credential.helper={HELPER}"
 def test_push_builds_the_exact_argv_and_env(tmp_path):
     remote, runner, _ = a_remote()
 
-    remote.push(tmp_path, "tenon/x")
+    remote.push(tmp_path, "sdkfit/x")
 
     argv, kwargs = runner.calls[0]
-    assert argv == ["git", "-c", HELPER_CONFIG, "push", "origin", "tenon/x"]
+    assert argv == ["git", "-c", HELPER_CONFIG, "push", "origin", "sdkfit/x"]
     assert kwargs["cwd"] == tmp_path
     assert kwargs["capture_output"] is True
     assert kwargs["text"] is True
     assert kwargs["shell"] is False
     assert kwargs["timeout"] == 30
-    assert kwargs["env"]["TENON_GITHUB_TOKEN"] == TOKEN
+    assert kwargs["env"]["SDKFIT_GITHUB_TOKEN"] == TOKEN
     assert kwargs["env"]["GIT_TERMINAL_PROMPT"] == "0"
     assert kwargs["env"]["PATH"] == os.environ["PATH"]
     assert TOKEN not in " ".join(argv)
@@ -274,7 +274,7 @@ def test_a_push_failure_is_a_remote_error_with_the_stderr_tail(tmp_path):
     )
 
     with pytest.raises(RemoteError) as raised:
-        remote.push(tmp_path, "tenon/x")
+        remote.push(tmp_path, "sdkfit/x")
 
     assert "fatal: could not push" in raised.value.detail
 
@@ -293,7 +293,7 @@ def test_a_push_failure_redacts_the_token(tmp_path):
     )
 
     with pytest.raises(RemoteError) as raised:
-        remote.push(tmp_path, "tenon/x")
+        remote.push(tmp_path, "sdkfit/x")
 
     assert TOKEN not in raised.value.detail
     assert "***" in raised.value.detail
@@ -304,13 +304,13 @@ def test_a_push_failure_redacts_the_token(tmp_path):
 def test_create_pr_posts_the_exact_body_and_returns_the_url(tmp_path, draft):
     url = "https://github.com/acme/widgets/pull/7"
     remote, _, transport = a_remote((201, {}, json.dumps({"html_url": url})))
-    body = "## Tenon proof: TESTS_PASSED\n"
+    body = "## SDK Fit proof: TESTS_PASSED\n"
 
     result = remote.create_pr(
         tmp_path,
-        branch="tenon/x",
+        branch="sdkfit/x",
         base="main",
-        title="[TESTS_PASSED] tenon: x",
+        title="[TESTS_PASSED] sdkfit: x",
         body=body,
         draft=draft,
     )
@@ -321,9 +321,9 @@ def test_create_pr_posts_the_exact_body_and_returns_the_url(tmp_path, draft):
     assert sent_url == f"{API}/repos/acme/widgets/pulls"
     assert headers["Authorization"] == f"Bearer {TOKEN}"
     assert json.loads(sent) == {
-        "head": "tenon/x",
+        "head": "sdkfit/x",
         "base": "main",
-        "title": "[TESTS_PASSED] tenon: x",
+        "title": "[TESTS_PASSED] sdkfit: x",
         "body": body,
         "draft": draft,
     }
@@ -337,9 +337,9 @@ def test_a_missing_pr_url_is_a_remote_error(tmp_path):
     with pytest.raises(RemoteError):
         remote.create_pr(
             tmp_path,
-            branch="tenon/x",
+            branch="sdkfit/x",
             base="main",
-            title="[TESTS_PASSED] tenon: x",
+            title="[TESTS_PASSED] sdkfit: x",
             body="body\n",
             draft=False,
         )
@@ -347,6 +347,6 @@ def test_a_missing_pr_url_is_a_remote_error(tmp_path):
 
 # Spec AC5: the app remote is part of the package surface.
 def test_the_app_remote_is_exported_from_the_package():
-    import tenon.pr as pr
+    import sdkfit.pr as pr
 
     assert pr.GitHubAppRemote is GitHubAppRemote

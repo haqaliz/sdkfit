@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from tenon.pr.api import GitHubApi, GitHubApiError
-from tenon.pr.github_app import CREDENTIAL_HELPER
-from tenon.pr.installed import InstalledRepo, clone_repo, list_installation_repos
-from tenon.pr.remote import RemoteError
+from sdkfit.pr.api import GitHubApi, GitHubApiError
+from sdkfit.pr.github_app import CREDENTIAL_HELPER
+from sdkfit.pr.installed import InstalledRepo, clone_repo, list_installation_repos
+from sdkfit.pr.remote import RemoteError
 
 API = "https://api.github.com"
 TOKEN = "ghs_test"
@@ -262,7 +262,7 @@ def test_a_real_clone_lands_the_repo_and_is_removed_on_exit(repo_with_remote):
     repo = InstalledRepo("acme/widgets", str(repo_with_remote.work))
 
     with clone_repo(repo, TOKEN) as checkout:
-        assert checkout.name.startswith("tenon-installed-")
+        assert checkout.name.startswith("sdkfit-installed-")
         assert (checkout / "acme" / "client.py").is_file()
         assert (checkout / ".git").is_dir()
 
@@ -293,7 +293,7 @@ def test_the_clone_argv_and_env_carry_no_token_in_argv():
         assert kwargs["text"] is True
         assert kwargs["shell"] is False
         assert kwargs["timeout"] == 30
-        assert kwargs["env"]["TENON_GITHUB_TOKEN"] == TOKEN
+        assert kwargs["env"]["SDKFIT_GITHUB_TOKEN"] == TOKEN
         assert kwargs["env"]["GIT_TERMINAL_PROMPT"] == "0"
         assert kwargs["env"]["PATH"] == os.environ["PATH"]
 
@@ -327,7 +327,7 @@ def test_a_missing_clone_url_is_a_named_error_and_removes_the_dir(
         created.append(path)
         return str(path)
 
-    monkeypatch.setattr("tenon.pr.installed.tempfile.mkdtemp", a_mkdtemp)
+    monkeypatch.setattr("sdkfit.pr.installed.tempfile.mkdtemp", a_mkdtemp)
     repo = InstalledRepo("acme/widgets", str(tmp_path / "missing"))
 
     with pytest.raises(RemoteError) as raised:
@@ -380,7 +380,7 @@ def test_a_clone_that_cannot_run_is_a_named_error(failure):
 
 # Spec AC1/AC5: the installation discovery surface is exported from the package.
 def test_the_installed_surface_is_exported_from_the_package():
-    import tenon.pr as pr
+    import sdkfit.pr as pr
 
     assert pr.InstalledRepo is InstalledRepo
     assert pr.list_installation_repos is list_installation_repos

@@ -2,9 +2,9 @@
 
 import pytest
 
-from tenon.locate import SiteShape
-from tenon.locate.rust_scan import scan_rust
-from tenon.locate.scan import Hit
+from sdkfit.locate import SiteShape
+from sdkfit.locate.rust_scan import scan_rust
+from sdkfit.locate.scan import Hit
 
 
 def a_repo(tmp_path, files):

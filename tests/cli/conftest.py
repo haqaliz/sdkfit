@@ -112,11 +112,11 @@ def a_copy(destination: Path) -> Path:
 
 
 def a_config(command: bool = True) -> str:
-    """A valid ``tenon.toml``; the check just imports the fixture package."""
+    """A valid ``sdkfit.toml``; the check just imports the fixture package."""
     text = '[locate]\nsdk_package = "acme.client"\n'
     if command:
         argv = [sys.executable, "-c", "import acme.billing"]
-        text += "\n[tenon]\ncommand = " + json.dumps(argv) + "\n"
+        text += "\n[sdkfit]\ncommand = " + json.dumps(argv) + "\n"
     return text
 
 
@@ -190,7 +190,7 @@ def a_write_specs(directory: Path, old: str, new: str) -> tuple[Path, Path]:
 @pytest.fixture
 def a_repo(tmp_path):
     repo = a_copy(tmp_path / "repo")
-    (repo / "tenon.toml").write_text(a_config())
+    (repo / "sdkfit.toml").write_text(a_config())
     return repo
 
 
@@ -202,7 +202,7 @@ def a_repo_without_config(tmp_path):
 @pytest.fixture
 def a_ts_repo(tmp_path):
     repo = a_ts_copy(tmp_path / "repo")
-    (repo / "tenon.toml").write_text(
+    (repo / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "ts"\nsdk_package = "stripe"\n'
     )
     return TsRepo(
@@ -217,7 +217,7 @@ def a_rust_repo(tmp_path):
     repo = shutil.copytree(
         RUST_BASIC, tmp_path / "repo", ignore=shutil.ignore_patterns("__pycache__")
     )
-    (repo / "tenon.toml").write_text(
+    (repo / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "rust"\nsdk_package = "stripe"\n'
     )
     return RustRepo(
@@ -238,7 +238,7 @@ def a_go_repo(tmp_path):
     repo = shutil.copytree(
         GO_BASIC, tmp_path / "repo", ignore=shutil.ignore_patterns("__pycache__")
     )
-    (repo / "tenon.toml").write_text(
+    (repo / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "go"\n'
         'sdk_package = "github.com/stripe/stripe-go/v76"\n'
         'package_name = "stripe"\n'
@@ -261,7 +261,7 @@ def a_csharp_repo(tmp_path):
         tmp_path / "repo",
         ignore=shutil.ignore_patterns("__pycache__"),
     )
-    (repo / "tenon.toml").write_text(
+    (repo / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "csharp"\nsdk_package = "Stripe"\n'
     )
     return CSharpRepo(
@@ -287,11 +287,11 @@ def a_mcp_repo():
 
 @pytest.fixture
 def a_mcp_repo_without_config(tmp_path):
-    """The MCP fixture repo with no tenon.toml, copied out of the tree."""
+    """The MCP fixture repo with no sdkfit.toml, copied out of the tree."""
     repo = shutil.copytree(
         MCP_CLI, tmp_path / "repo", ignore=shutil.ignore_patterns("__pycache__")
     )
-    (repo / "tenon.toml").unlink()
+    (repo / "sdkfit.toml").unlink()
     return repo
 
 
@@ -326,7 +326,7 @@ def a_clean_repo(tmp_path):
     (repo / "acme" / "billing.py").write_text(
         "from acme.client import StripeClient\n\nclient = StripeClient()\n"
     )
-    (repo / "tenon.toml").write_text(a_config())
+    (repo / "sdkfit.toml").write_text(a_config())
     return repo
 
 
@@ -336,7 +336,7 @@ def a_repo_without_sdk(tmp_path):
     (repo / "acme" / "billing.py").write_text(
         "def create_charge(amount):\n    return amount\n"
     )
-    (repo / "tenon.toml").write_text(a_config())
+    (repo / "sdkfit.toml").write_text(a_config())
     return repo
 
 
@@ -376,7 +376,7 @@ def a_no_command_config(tmp_path):
 def a_breaking_config(tmp_path):
     path = tmp_path / "breaking.toml"
     path.write_text(
-        a_config().replace("[tenon]", "[tenon]\nbreaking_only = true")
+        a_config().replace("[sdkfit]", "[sdkfit]\nbreaking_only = true")
     )
     return path
 

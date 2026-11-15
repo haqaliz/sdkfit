@@ -2,7 +2,7 @@
 
 import pytest
 
-from tenon.locate.go_config import GoLocateConfig
+from sdkfit.locate.go_config import GoLocateConfig
 
 
 def a_config(**kwargs):

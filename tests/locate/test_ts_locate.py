@@ -5,8 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from tenon.detect import ChangeKind, diff, parse
-from tenon.locate import (
+from sdkfit.detect import ChangeKind, diff, parse
+from sdkfit.locate import (
     AmbiguityReason,
     LocateReason,
     SiteShape,
@@ -217,7 +217,7 @@ def test_a_change_with_no_matching_site_has_no_sites():
 
 # Spec AC6: an unsupported kind short-circuits before the repository is scanned.
 def test_an_unsupported_kind_short_circuits_without_scanning(monkeypatch):
-    import tenon.locate.ts_locate as ts_locate_module
+    import sdkfit.locate.ts_locate as ts_locate_module
 
     def no_scan(*args, **kwargs):
         raise AssertionError("an unsupported kind must not scan")
@@ -551,8 +551,8 @@ def test_two_runs_produce_identical_json():
 
 
 HASH_SEED_SCRIPT = """
-from tenon.detect import diff, parse
-from tenon.locate import TsLocateConfig, locate_ts
+from sdkfit.detect import diff, parse
+from sdkfit.locate import TsLocateConfig, locate_ts
 
 SPEC = '''\\
 openapi: 3.1.0

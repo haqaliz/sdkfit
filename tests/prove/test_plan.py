@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location, diff, parse
-from tenon.locate import LocateConfig, locate
-from tenon.propose import Edit, Proposal, ProposalReason, propose
-from tenon.propose.render import render
-from tenon.prove import (
+from sdkfit.detect import Change, ChangeKind, Location, diff, parse
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.propose import Edit, Proposal, ProposalReason, propose
+from sdkfit.propose.render import render
+from sdkfit.prove import (
     ProofCause,
     ProofLevel,
     ProofStage,
@@ -20,8 +20,8 @@ from tenon.prove import (
     prove,
     run_check,
 )
-from tenon.prove.plan import ProofPlan
-from tenon.prove.run import prove_plan
+from sdkfit.prove.plan import ProofPlan
+from sdkfit.prove.run import prove_plan
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "repos"
 PROOF_BASIC = FIXTURES / "proof-basic"
@@ -79,7 +79,7 @@ def source_unchanged_and_copies_removed(tmp_path, monkeypatch):
     yield
 
     assert tree_hashes(PROOF_BASIC) == before
-    assert list(tmp_path.glob("tenon-prove-*")) == []
+    assert list(tmp_path.glob("sdkfit-prove-*")) == []
 
 
 def a_rename_proposal(root=PROOF_BASIC, proposer=None):
@@ -236,7 +236,7 @@ def test_an_empty_plan_is_no_proof_command_before_copying(monkeypatch):
     def unexpected(*args, **kwargs):
         raise AssertionError("an empty plan must not copy")
 
-    monkeypatch.setattr("tenon.prove.copy.copy_tree", unexpected)
+    monkeypatch.setattr("sdkfit.prove.copy.copy_tree", unexpected)
 
     result = prove_plan(a_rename_proposal(), PROOF_BASIC, a_plan())
 
@@ -254,7 +254,7 @@ def test_a_red_baseline_stops_before_applying(field, stage, level, monkeypatch):
     def unexpected(*args, **kwargs):
         raise AssertionError("a red baseline must not apply the patch")
 
-    monkeypatch.setattr("tenon.prove.run.apply_diff", unexpected)
+    monkeypatch.setattr("sdkfit.prove.run.apply_diff", unexpected)
 
     result = prove_plan(
         a_rename_proposal(), PROOF_BASIC, a_plan(**{field: FAILING})
@@ -367,7 +367,7 @@ def test_a_red_build_baseline_stops_before_apply_and_later_baselines(monkeypatch
     def unexpected(*args, **kwargs):
         raise AssertionError("a red build baseline must not apply the patch")
 
-    monkeypatch.setattr("tenon.prove.run.apply_diff", unexpected)
+    monkeypatch.setattr("sdkfit.prove.run.apply_diff", unexpected)
 
     result = prove_plan(
         a_rename_proposal(),
@@ -387,7 +387,7 @@ def test_a_red_replay_baseline_stops_before_apply(monkeypatch):
     def unexpected(*args, **kwargs):
         raise AssertionError("a red replay baseline must not apply the patch")
 
-    monkeypatch.setattr("tenon.prove.run.apply_diff", unexpected)
+    monkeypatch.setattr("sdkfit.prove.run.apply_diff", unexpected)
 
     result = prove_plan(
         a_rename_proposal(),
@@ -434,7 +434,7 @@ def test_the_diff_is_applied_once(monkeypatch):
         calls.append(diff)
         return apply_diff(copy, diff)
 
-    monkeypatch.setattr("tenon.prove.run.apply_diff", counting)
+    monkeypatch.setattr("sdkfit.prove.run.apply_diff", counting)
 
     result = prove_plan(
         a_rename_proposal(),
@@ -512,7 +512,7 @@ def test_checks_run_in_a_copy_that_is_removed(monkeypatch):
         seen.append(Path(cwd))
         return run_check(command, cwd, kind, timeout)
 
-    monkeypatch.setattr("tenon.prove.run.run_check", spy)
+    monkeypatch.setattr("sdkfit.prove.run.run_check", spy)
 
     result = prove_plan(a_rename_proposal(), PROOF_BASIC, an_all_stage_plan())
 
@@ -555,7 +555,7 @@ def test_the_prove_shortcut_empty_command_is_no_tests_found_before_copying(
     def unexpected(*args, **kwargs):
         raise AssertionError("an empty command must not copy")
 
-    monkeypatch.setattr("tenon.prove.copy.copy_tree", unexpected)
+    monkeypatch.setattr("sdkfit.prove.copy.copy_tree", unexpected)
 
     result = prove(a_rename_proposal(), PROOF_BASIC, [])
 
@@ -569,7 +569,7 @@ def test_the_prove_shortcut_empty_command_is_no_tests_found_before_copying(
 
 # PRD M3/M4: both new names belong to the public package.
 def test_the_package_exports_the_plan_and_runner():
-    import tenon.prove as package
+    import sdkfit.prove as package
 
     assert package.ProofPlan is ProofPlan
     assert package.prove_plan is prove_plan

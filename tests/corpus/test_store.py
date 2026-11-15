@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from tenon.corpus.record import CorpusRecord, Outcome, record_id
-from tenon.corpus.store import (
+from sdkfit.corpus.record import CorpusRecord, Outcome, record_id
+from sdkfit.corpus.store import (
     CorpusError,
     append_records,
     load_corpus,
@@ -231,7 +231,7 @@ def test_update_leaves_the_file_intact_when_replace_fails(tmp_path, monkeypatch)
     def fail_replace(source, target):
         raise OSError("disk full")
 
-    monkeypatch.setattr("tenon.corpus.store.os.replace", fail_replace)
+    monkeypatch.setattr("sdkfit.corpus.store.os.replace", fail_replace)
     with pytest.raises(OSError, match="disk full"):
         update_outcome(path, second.id, Outcome.MERGED)
 

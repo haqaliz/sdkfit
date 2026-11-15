@@ -1,4 +1,4 @@
-# Tenon: Capability Roadmap
+# SDK Fit: Capability Roadmap
 
 Engine capabilities in build order. Each lands test-first.
 
@@ -19,11 +19,12 @@ Engine capabilities in build order. Each lands test-first.
 | **T13** | **Hardened deployment.** Container, TLS proxy, backups, resilience. | T10e | Operator-owned secrets | **Shipped 2026-11-12** — deployable Compose + Caddy, workers/retries/cancel/metrics, SQLite hardening |
 | **T14** | **CI and release pipeline.** Test matrix, artifacts and a tag-driven release. | T13 | PyPI an explicit opt-in | **Shipped 2026-11-14** — CI 3.11–3.13 + build, tag release with wheel/sdist, gated PyPI |
 | **T15** | **Hardened cloud deployment.** Shared Postgres queue and Kubernetes manifests. | T13 | Operator-owned cluster/secrets | **Shipped 2026-11-16** — `PostgresRunStore`, `--database-url`, Deployment/Ingress/HPA, cloud guide |
-| **T16** | **Launch readiness.** PyPI trusted publishing, GHCR image, offline demo and launch kit. | T15 | Operator-owned PyPI/registry; name decision | **Ready 2026-11-16** — OIDC publish, `ghcr.io` image job, demo/transcript, launch kit; the launch name is an open blocker |
+| **T16** | **Launch readiness.** PyPI trusted publishing, GHCR image, offline demo and launch kit. | T15 | Operator-owned PyPI/registry | **Ready 2026-11-16** — OIDC publish, `ghcr.io` image job, demo/transcript, launch kit |
+| **T17** | **Rename to SDK Fit.** Resolve the launch-name collision end to end. | T16 | Repo/registry rename | **Shipped 2026-11-16** — `sdkfit` distribution/CLI/import, `SDKFIT_*`, repo/image/docs renamed, invariant test |
 
 ### T1 as shipped (2026-10-26)
 
-`src/tenon/detect/`: `load`/`parse` (OpenAPI 3.0.x/3.1.x, YAML or JSON, local `$ref` resolution),
+`src/sdkfit/detect/`: `load`/`parse` (OpenAPI 3.0.x/3.1.x, YAML or JSON, local `$ref` resolution),
 `diff` producing 13 typed record kinds with `breaking` and `confidence`, and rename inference that
 pairs only unambiguous removed/added records. Bad input is a named refusal with a JSON pointer.
 136 tests, offline and deterministic.
@@ -45,7 +46,7 @@ makes the result publishable. T10 is the business and is deferred.
 
 ### T2 as built (2026-10-28)
 
-`src/tenon/locate/`: `change → query` (explicit `METHOD /path` and `Schema.field` mappings, then
+`src/sdkfit/locate/`: `change → query` (explicit `METHOD /path` and `Schema.field` mappings, then
 inference from path segments and HTTP verb), an `ast` scan of modules that reach the configured SDK
 package (one-hop aliases, character-precise file/line/column), and a single certainty policy that
 returns `certain` sites plus ambiguity groups with named reasons (`DYNAMIC_KWARGS`,
@@ -61,7 +62,7 @@ and `assert_has_calls` are not.
 
 ### T3 as built (2026-10-29)
 
-`src/tenon/propose/`: a `Proposal` contract, a deterministic `RuleProposer` for field renames, and
+`src/sdkfit/propose/`: a `Proposal` contract, a deterministic `RuleProposer` for field renames, and
 an assembly that verifies every candidate span against the current source before applying it in
 memory and rendering a unified diff. Ambiguous sites, uneditable call sites and stale spans become
 skipped suggestions with named reasons; a proposal carries `NO_RULE`, `NO_CERTAIN_SITES`,
@@ -74,7 +75,7 @@ T4; a file without a final newline produces a diff `git apply` will reject (docu
 
 ### T4 as built (2026-10-29)
 
-`src/tenon/prove/`: a proof-result contract (`TESTS_PASSED` / `UNVERIFIED` with a closed cause set),
+`src/sdkfit/prove/`: a proof-result contract (`TESTS_PASSED` / `UNVERIFIED` with a closed cause set),
 an isolated copy that drops VCS and cache state, `git apply` of the exact diff T5 will ship, and a
 baseline-first runner with a timeout and capped output tails. A red baseline is
 `TESTS_FAILED_BEFORE` and never applies the patch. 105 tests, offline.
@@ -86,7 +87,7 @@ venv or generated state inside the tree may not be runnable in the copy.
 
 ### T5 as built (2026-11-05)
 
-`src/tenon/pr/`: a deterministic `PrDraft` (title, body, branch, commit message), `PrResult` with a
+`src/sdkfit/pr/`: a deterministic `PrDraft` (title, body, branch, commit message), `PrResult` with a
 closed refusal set, `render_pr` (the level in the title; change, check command and exit codes, files,
 skipped sites and optional unanalyzed subtrees in the body; no duplicated diff), and `write_pr`
 (clean checkout and origin required; an isolated `git clone`; `git apply` of the exact proven diff;
@@ -107,7 +108,7 @@ caller chooses the check command, so T5 cannot know it was a subset.
 
 ### T6 as built (2026-11-05)
 
-`src/tenon/locate/`: `ts_scan.py` (tree-sitter 0.26, TypeScript 0.23, JavaScript 0.25) discovers
+`src/sdkfit/locate/`: `ts_scan.py` (tree-sitter 0.26, TypeScript 0.23, JavaScript 0.25) discovers
 `.ts/.mts/.cts/.tsx/.js/.jsx/.mjs/.cjs`, resolves ESM/CommonJS imports, relative-import reachability
 and one-hop aliases, and emits the shipped `Hit`/`Dynamic`/`ScanResult` evidence. `ts_config.py` is
 `TsLocateConfig` (npm package name); `ts_locate.py` is `locate_ts`, which reuses `query.derive` and
@@ -119,11 +120,11 @@ Known limits at this level: relative imports only (`tsconfig` paths and workspac
 are not resolved); JSX attribute names are parsed but not sites; no type inference, so a
 factory-returned client is unrooted; a parse-error file is skipped; static string subscripts are
 `DYNAMIC_GETATTR`; T4's isolated copy still drops `node_modules`, so a real TS `npm test` may be
-`TESTS_FAILED_BEFORE` in the proof copy while `tenon check` works; the grammar versions are pinned.
+`TESTS_FAILED_BEFORE` in the proof copy while `sdkfit check` works; the grammar versions are pinned.
 
 ### T7 as built (2026-11-06)
 
-`src/tenon/prove/`: `ProofStage` (build/characterize/replay/tests), the five-level `ProofLevel`
+`src/sdkfit/prove/`: `ProofStage` (build/characterize/replay/tests), the five-level `ProofLevel`
 (`TESTS_PASSED > CHARACTERIZED > REPLAYED > TYPES_BUILD_ONLY > UNVERIFIED`), `PROOF_RANK`,
 stage-specific causes, `CheckResult.stage` and `ProofResult.checks`. `ProofPlan` + `prove_plan` run
 every configured stage's baseline, apply the diff once, run every after-check, and fail closed: any
@@ -134,7 +135,7 @@ configured stage is green. `prove` remains a tests-only shortcut. The CLI adds `
 below with opt-in, `UNVERIFIED` always a draft, and `BELOW_REQUIRED_LEVEL` otherwise. 1,178 tests,
 offline.
 
-Known limits at this level: the characterization and replay commands are user-supplied; Tenon does
+Known limits at this level: the characterization and replay commands are user-supplied; SDK Fit does
 not generate the tests or record the traffic, so the label is only as strong as the command (the body
 says so). All stages share one timeout; a red weaker stage fails the whole result even when a stronger
 stage is green; per-stage timeouts and generators/recorders are later cards. A `TYPES_BUILD_ONLY` PR
@@ -142,7 +143,7 @@ is a normal PR only when the user requires that level; otherwise it is a refusal
 
 ### T8a as built (2026-11-07)
 
-`src/tenon/detect/mcp_ingest.py` loads a saved `tools/list` result (envelope or bare array),
+`src/sdkfit/detect/mcp_ingest.py` loads a saved `tools/list` result (envelope or bare array),
 normalizes it to a name-keyed mapping, validates tool names/schemas, resolves local `$ref`s and
 refuses bad input by name. `mcp_diff.py` emits the shipped `Change`/`DiffResult` records: tool
 added/removed as synthetic `method="tool"` operations; input/output schema property
@@ -157,11 +158,11 @@ is ignored; output-schema required semantics are simplified.
 
 ### T8b as built (2026-11-07)
 
-`src/tenon/locate/mcp_*.py`: a Python `ast` scanner and `locate_mcp` for the high-level MCP SDK
+`src/sdkfit/locate/mcp_*.py`: a Python `ast` scanner and `locate_mcp` for the high-level MCP SDK
 `call_tool` pattern. A site is certain only when the receiver is an MCP `ClientSession`
 import/alias/`with` binding and the tool name is a literal matching the change; argument keys use
 the shipped `dict_key`/`keyword` spans; dynamic tool names/payloads and unrooted receivers are named
-ambiguity groups. `tenon check` / `tenon fix` accept `--source mcp` and `[locate] source = "mcp"`;
+ambiguity groups. `sdkfit check` / `sdkfit fix` accept `--source mcp` and `[locate] source = "mcp"`;
 the MCP diff/locator feed the existing propose/prove/PR stages. 1,342 tests, offline.
 
 Known limits: Python only; high-level `call_tool` only (no `send_request`, framework wrappers, or a
@@ -170,41 +171,41 @@ call only, not result-field dataflow; a second-hop receiver alias is `ALIAS_CHAI
 
 ### T8c as built (2026-11-07)
 
-`src/tenon/probe/`: a stdlib newline-JSON-RPC stdio client (`initialize`, paginated `tools/list`,
+`src/sdkfit/probe/`: a stdlib newline-JSON-RPC stdio client (`initialize`, paginated `tools/list`,
 `tools/call`, timeouts, named errors), `tasks.json` with optional `tools`/`result_contains`
 expectations, and a user-supplied agent command (`--agent`) that receives `{"task","tools"}` and
 returns `{"calls":[...]}`. The probe executes the plan, records each call's result/error, evaluates
-expectations, and prints a text or byte-stable JSON report. `tenon probe` exits 0 when every task
+expectations, and prints a text or byte-stable JSON report. `sdkfit probe` exits 0 when every task
 worked, 1 when one failed, 2 on usage/connection. No model, key, network or new dependency; offline
 fake server/agent tests. 1,436 tests.
 
 Known limits: stdio/tools only (no HTTP/SSE, resources/prompts, sampling/roots/elicitation); the
 agent is the user's command, so a weak agent yields a weak readiness report (the report shows the
 plan/calls); a server logging to stdout corrupts the JSON-RPC stream; no `--stop-on-error`, no
-`tenon.toml` probe defaults; the probe runs arbitrary local server/agent code and is not a sandbox.
+`sdkfit.toml` probe defaults; the probe runs arbitrary local server/agent code and is not a sandbox.
 
 ### T9 as built (2026-11-07)
 
-`src/tenon/corpus/`: a `CorpusRecord` (deterministic id over repo/commit/change/diff; change,
+`src/sdkfit/corpus/`: a `CorpusRecord` (deterministic id over repo/commit/change/diff; change,
 proposal, proof and PR snapshots; six outcomes; user-supplied date/evidence/notes), an append-only
 JSONL store with atomic outcome updates, and a report grouping by proof level and outcome. The merge
 rate is `merged / (merged + rejected + closed + incident)` and is null until a real outcome exists;
-`local_only`/`pending` never count as success. The CLI adds `tenon corpus record --from fix.json`,
+`local_only`/`pending` never count as success. The CLI adds `sdkfit corpus record --from fix.json`,
 `outcome` and `report`. `docs/benchmark/corpus.jsonl` seeds the two public M0.3 cases as
 `local_only`/`TESTS_PASSED`; `docs/benchmark/README.md` states the method and the absence of merge
 outcomes. 1,571 tests, offline.
 
 Known limits: the corpus is local/opt-in (no upload, no GitHub outcome detection); a `merged` outcome
-is a user claim with a URL/evidence, not a Tenon-verified fact; the seed has no merge outcomes, so
+is a user claim with a URL/evidence, not a SDK Fit-verified fact; the seed has no merge outcomes, so
 every rate is n/a; the records are snapshots and a schema change is a migration; no `fix --corpus`
 auto-record.
 
 ### T10a as built (2026-11-08)
 
-`src/tenon/pr/`: `GitHubAppToken` mints an RS256 app JWT and exchanges it for an installation token;
+`src/sdkfit/pr/`: `GitHubAppToken` mints an RS256 app JWT and exchanges it for an installation token;
 `GitHubApi` is a small stdlib REST client with an injectable transport; `GitHubAppRemote` implements
 the T5 `Remote` protocol (origin parse, default branch, branch existence, token-safe `git push` via a
-credential helper, PR creation). `tenon fix --open-pr --remote app` constructs it from flags/env; the
+credential helper, PR creation). `sdkfit fix --open-pr --remote app` constructs it from flags/env; the
 default remains the user's `gh`. `PyJWT`/`cryptography` are an optional `[app]` extra and dev
 dependency; the core install is unchanged. 1,635 tests, offline (test RSA key, fake transport/runner).
 
@@ -215,23 +216,23 @@ target; no token-expiry refresh beyond one mint per remote.
 
 ### T10b as built (2026-11-08)
 
-`src/tenon/provider/`: a `MigrationBundle` (provider/migration identity, source/language, old/new
+`src/sdkfit/provider/`: a `MigrationBundle` (provider/migration identity, source/language, old/new
 spec paths relative to the bundle, locate config, `check`/`build`/`characterize`/`replay`, require,
-breaking_only) and `load_bundle` with named validation. `tenon provider migrate <repo> --bundle PATH`
+breaking_only) and `load_bundle` with named validation. `sdkfit provider migrate <repo> --bundle PATH`
 runs the shipped detect → locate → propose → prove pipeline (the same `_fix_results`), prints a
 provider/migration header plus the fix report or a provider JSON envelope, and with `--open-pr` uses
 `gh`/the T10a app remote. `--check`/`--require` override the bundle. 1,738 tests, offline.
 
 Known limits: one repo per run (local multi-repo fan-out shipped in T10c and installed fan-out in
 T10d); no webhooks, database or hosted service; no provider note in the PR body; the bundle is
-trusted local input (paths/commands), not a sandbox; `command` is accepted as a `tenon.toml` alias
+trusted local input (paths/commands), not a sandbox; `command` is accepted as a `sdkfit.toml` alias
 for the documented `check` key.
 
 ### T10c as built (2026-11-09)
 
-`src/tenon/provider/repos.py`: `load_repos` parses a UTF-8 repos file (one local path per line,
+`src/sdkfit/provider/repos.py`: `load_repos` parses a UTF-8 repos file (one local path per line,
 blank lines and `#` comments ignored, `~` expanded, relative paths resolved against the file's
-parent) with named errors for a missing/non-file/non-UTF-8/empty list. `tenon provider migrate
+parent) with named errors for a missing/non-file/non-UTF-8/empty list. `sdkfit provider migrate
 [<repo>|--repos FILE] --bundle PATH` loads the bundle and `CliConfig` once and runs the shipped
 `_fix_results` sequentially per listed checkout, constructing the gh/app remote once; a missing
 path is a per-repo `not a directory` failure that does not stop the rest. Text is one `repo:` block
@@ -246,11 +247,11 @@ clones) shipped in T10d; a hosted/webhook-driven service remains a later milesto
 
 ### T10d as built (2026-11-10)
 
-`src/tenon/pr/installed.py`: `InstalledRepo` plus `list_installation_repos` (paginated
+`src/sdkfit/pr/installed.py`: `InstalledRepo` plus `list_installation_repos` (paginated
 `GET /installation/repositories` with the installation token, archived repos skipped, named errors
-for malformed pages and a 100-page cap) and `clone_repo` (a `tenon-installed-*` temp dir, a shallow
-`git clone` with the T10a credential helper and `TENON_GITHUB_TOKEN` in the child env, token scrubbed
-from errors, the dir always removed). `tenon provider migrate --installed --bundle PATH` resolves the
+for malformed pages and a 100-page cap) and `clone_repo` (a `sdkfit-installed-*` temp dir, a shallow
+`git clone` with the T10a credential helper and `SDKFIT_GITHUB_TOKEN` in the child env, token scrubbed
+from errors, the dir always removed). `sdkfit provider migrate --installed --bundle PATH` resolves the
 T10a app identity, mints one token, discovers the installation's repos, clones each, runs the shipped
 `_fix_results` and reuses T10c's text/JSON fan-out report with `repo` = `owner/name`; `--open-pr`
 constructs one `GitHubAppRemote` from the same token, while a dry run makes no PR call. A clone
@@ -262,11 +263,11 @@ hosted/webhook-driven service is not built.
 
 ### T11a as built (2026-11-10)
 
-`src/tenon/locate/rust_{config,scan,locate}.py`: `RustLocateConfig` (one crate identifier plus the
+`src/sdkfit/locate/rust_{config,scan,locate}.py`: `RustLocateConfig` (one crate identifier plus the
 shared `operations`/`fields` mappings), `scan_rust` (tree-sitter-rust over `.rs` files; `use` rooting
 with grouped/nested imports and `as` aliases, bare crate paths, associated calls, struct-literal
 fields, per-function `let` bindings and field access), and `locate_rust` applying the shipped
-`derive`/`resolve` policy unchanged. `--language rust`, `tenon.toml` and provider bundles accept
+`derive`/`resolve` policy unchanged. `--language rust`, `sdkfit.toml` and provider bundles accept
 `rust`; MCP stays Python-only; no Cargo/rustc subprocess or proof preset. A mapping locates the
 repo's spelling, but `fix` proposes a rename only when that spelling equals the spec's old name
 (the shipped proposer rule); otherwise it reports `NO_EDITABLE_SITES` and the customer renames
@@ -279,12 +280,12 @@ client built with `Client::new`/`default`, an annotation or a `receivers` factor
 
 ### T11b as built (2026-11-10)
 
-`src/tenon/locate/go_{config,scan,locate}.py`: `GoLocateConfig` (an import root, an optional
+`src/sdkfit/locate/go_{config,scan,locate}.py`: `GoLocateConfig` (an import root, an optional
 `package_name` and the shared `operations`/`fields` mappings), `scan_go` (tree-sitter-go over `.go`
 files; root/subpackage imports with aliases and package-name inference, package-qualified calls,
 composite-literal keys, per-function `var`/`:=` bindings and field access), and `locate_go` applying
 the shipped `derive`/`resolve` policy unchanged. `--language go`, `--package-name`,
-`tenon.toml`/bundle `locate.package_name` and provider bundles accept `go`; MCP stays Python-only;
+`sdkfit.toml`/bundle `locate.package_name` and provider bundles accept `go`; MCP stays Python-only;
 no Go toolchain or proof preset. 2,013 tests, offline.
 
 Known limits: method chains on an untracked value, dot imports, reflection, generics inference,
@@ -295,11 +296,11 @@ tracking for an annotation, a composite literal or a `receivers` factory.
 
 ### T11c as built (2026-11-11)
 
-`src/tenon/locate/csharp_{config,scan,locate}.py`: `CSharpLocateConfig` (a dotted namespace root
+`src/sdkfit/locate/csharp_{config,scan,locate}.py`: `CSharpLocateConfig` (a dotted namespace root
 plus the shared `operations`/`fields` mappings), `scan_csharp` (tree-sitter-c-sharp over `.cs` files;
 `using`/`global using`/alias roots, simple and qualified type names, static and tracked-`new`
 instance calls, object-initializer properties, per-member property access), and `locate_csharp`
-applying the shipped `derive`/`resolve` policy unchanged. `--language csharp`, `tenon.toml` and
+applying the shipped `derive`/`resolve` policy unchanged. `--language csharp`, `sdkfit.toml` and
 provider bundles accept `csharp`; MCP stays Python-only; no .NET toolchain or proof preset. 2,099
 tests, offline. T11 is complete.
 
@@ -382,10 +383,10 @@ a duplicate name stays unrooted; a helper imported from another package is not e
 
 ### T13a as built (2026-11-12)
 
-`Dockerfile` (multi-stage `uv` build, `--extra app`, git/CA, non-root `tenon` uid 10001, owned
+`Dockerfile` (multi-stage `uv` build, `--extra app`, git/CA, non-root `sdkfit` uid 10001, owned
 `/data`, stdlib healthcheck), `docker-compose.yml` (the service plus Caddy, a named DB volume,
 read-only bundles/secrets, tmpfs `/tmp`, read-only root, dropped caps, no service host port),
-`Caddyfile` (automatic HTTPS via `TENON_DOMAIN`), `.env.example`, the bundle/secret layout and
+`Caddyfile` (automatic HTTPS via `SDKFIT_DOMAIN`), `.env.example`, the bundle/secret layout and
 `docs/technical/DEPLOYMENT.md` (secrets, key permissions, TLS/local CA, backups/restore, rotation,
 upgrades, security checklist). `GET /ready` (with `RunStore.ping`) is the readiness signal; `/health`
 stays liveness. 2,473 tests, offline (static artifact checks; no Docker daemon in pytest).
@@ -401,7 +402,7 @@ responsibility.
 foreign-key pragmas. `--workers N` (1..16) runs N threads over the atomic claim; `--retries N`
 (0..10) re-queues only runs that produced no report, with attempts visible and report-bearing runs
 terminal; `POST /runs/{id}/cancel` cancels a queued run or signals a running one and the runner stops
-the CLI's process group; `GET /metrics` (bearer) exposes run gauges by status and `tenon_workers`;
+the CLI's process group; `GET /metrics` (bearer) exposes run gauges by status and `sdkfit_workers`;
 startup recovery re-queues stranded running rows (or cancels requested ones). 2,527 tests, offline.
 
 Known limits: retries cover infrastructure failures only (a report-bearing exit 1 is not retried);
@@ -411,12 +412,12 @@ cleanup; N workers share the app token/rate limits; per-run retries/backoff are 
 
 ### T10e as built (2026-11-11)
 
-`src/tenon/service/`: a SQLite `RunStore` (queued/running/succeeded/failed, timestamps, exit, the
+`src/sdkfit/service/`: a SQLite `RunStore` (queued/running/succeeded/failed, timestamps, exit, the
 fan-out report JSON, errors, idempotency keys, and a deduplicated webhook-event log), a
 `CommandRunner` that invokes the shipped installed fan-out as one CLI subprocess, one `Worker`
 thread, a pure `Api.handle` with bearer auth, confined bundle names, `POST /runs`,
 `GET /runs/{id}`, `GET /runs`, `GET /health` and a HMAC-verified `POST /webhooks/github`, and a
-stdlib HTTP wrapper. `tenon provider serve --bundles DIR --db PATH --api-token TOKEN ...` starts the
+stdlib HTTP wrapper. `sdkfit provider serve --bundles DIR --db PATH --api-token TOKEN ...` starts the
 worker and server; `--dry-run` omits `--open-pr`. 2,235 tests, offline.
 
 Known limits: self-hosted and local-only; no TLS, rate limiting or a reverse proxy (the token and
@@ -425,7 +426,7 @@ the store; a run can outlive the HTTP request; a hardened cloud deployment is a 
 
 ### T10f as built (2026-11-14)
 
-`tenon provider serve --trigger EVENT[.ACTION]=BUNDLE` (repeatable) maps a verified GitHub delivery
+`sdkfit provider serve --trigger EVENT[.ACTION]=BUNDLE` (repeatable) maps a verified GitHub delivery
 to a registered bundle; the event/action match is exact with an actionless fallback, and a match
 queues the normal installed fan-out with `webhook:<delivery>` as the idempotency key. The 202 names
 the run; a non-match records only; a duplicate delivery returns the same run. The mapping is
@@ -441,7 +442,7 @@ queue many full runs, so map a specific action; per-run retries/backoff remain o
 `PostgresRunStore` shares the T13 `RunStore` API (a `Store` protocol) over a Postgres schema with
 `timestamptz`/`jsonb` columns; a claim is one `FOR UPDATE SKIP LOCKED` statement, idempotency uses
 `ON CONFLICT`, and startup recovery only re-queues rows older than the `--run-timeout` lease. The
-driver is an optional `[postgres]` extra. `provider serve --database-url`/`TENON_DATABASE_URL`
+driver is an optional `[postgres]` extra. `provider serve --database-url`/`SDKFIT_DATABASE_URL`
 selects it (exactly one of `--db`/`--database-url`). `deploy/k8s/` carries a two-replica hardened
 Deployment, Service, TLS Ingress with nginx rate limits, CPU HPA, a portable single-instance
 Postgres StatefulSet, placeholder Secrets/ConfigMap, a bundle PVC and a kustomization; the guide is
@@ -454,17 +455,29 @@ CPU, not queue depth; the service stays single-tenant.
 
 ### T16 as built (2026-11-16)
 
-The release workflow publishes `tenonhq` to PyPI with OIDC trusted publishing (no token secret,
+The release workflow publishes `sdkfit` to PyPI with OIDC trusted publishing (no token secret,
 still behind `PYPI_PUBLISH=true` and the `pypi` environment) and pushes the service image to
-`ghcr.io/haqaliz/tenon:<version>`/`:latest` from the same tag. `examples/launch-demo/` + `scripts/launch_demo.sh`
+`ghcr.io/haqaliz/sdkfit:<version>`/`:latest` from the same tag. `examples/launch-demo/` + `scripts/launch_demo.sh`
 run the shipped check/fix/provider pipeline offline on a self-contained consumer repo, with the
 recorded transcript in `docs/launch/DEMO.md`. `docs/launch/` carries the positioning, tagline,
 descriptions, FAQ, gallery plan, first comment, launch-day checklist and a live name/handles check.
 2,775 tests, offline.
 
 Known limits: the live PyPI/GHCR publishes are only exercised on the next tag; the PyPI project and
-trusted publisher are operator setup; the `tenonhq` name collides with tenonhq.com (the launch name
-is an open decision, not a solved one); the launch kit has no generated art and no submission.
+trusted publisher are operator setup; the launch-name collision was resolved by T17 (SDK Fit); the
+launch kit has no generated art and no submission.
+
+### T17 as built (2026-11-16)
+
+The whole product is **SDK Fit** (`sdkfit`): the distribution, import package, console script,
+`--version`, environment variables (`SDKFIT_*`), Docker/Compose, Kubernetes resource names and
+image path, scripts, current docs and the launch kit. The repository is `haqaliz/sdkfit` (GitHub
+redirects the old URLs). Historical changelog entries and `docs/planning/**` keep the old name; an
+invariant test fails if the previous name reappears in a shipped surface. The live name check records
+PyPI/npm/GitHub/`sdkfit.dev` free and `sdkfit.com` registered but unused. 2,776 tests, offline.
+
+Known limits: the previous command and environment prefix are not aliased (pre-1.0, no public
+PyPI install existed); older release assets keep the old name; the `.com` is not owned.
 
 
 

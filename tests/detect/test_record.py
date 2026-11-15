@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from tenon.detect import (
+from sdkfit.detect import (
     Change,
     ChangeKind,
     DiffResult,
@@ -260,7 +260,7 @@ def test_to_json_ignores_dict_insertion_order_inside_values():
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.detect import (
+from sdkfit.detect import (
     Change,
     ChangeKind,
     DiffResult,

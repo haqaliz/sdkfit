@@ -1,4 +1,4 @@
-# Tenon: Vision
+# SDK Fit: Vision
 
 > A dependency you do not maintain is a promise someone else can break.
 
@@ -7,7 +7,7 @@
 ## The bet in one sentence
 
 Updating code when an API changes is a solved *typing* problem and an unsolved *trust* problem.
-Any model can draft the patch; nobody trusts it. Tenon wins by being the system that **detects
+Any model can draft the patch; nobody trusts it. SDK Fit wins by being the system that **detects
 the change from machine-readable sources, patches the affected calls, and proves the result
 against checks you trust** before asking you to merge.
 
@@ -45,7 +45,7 @@ better model never makes it redundant.
 
 ## Positioning
 
-- **Not a dependency bumper.** Dependabot updates versions; Tenon repairs the code that a version
+- **Not a dependency bumper.** Dependabot updates versions; SDK Fit repairs the code that a version
   or an API change breaks.
 - **Not a coding agent with a PR button.** The PR states the proof level it actually reached.
 - **Honest labels:** `TESTS_PASSED`, `CHARACTERIZED`, `REPLAYED`, `TYPES_BUILD_ONLY`, `UNVERIFIED`.
@@ -54,9 +54,9 @@ better model never makes it redundant.
 
 ## The wedge to the company
 
-1. **OSS on-ramp:** `tenon check` finds affected call sites for a given API change; `tenon fix`
+1. **OSS on-ramp:** `sdkfit check` finds affected call sites for a given API change; `sdkfit fix`
    opens a PR with a proof level. Python first, OpenAPI as the change source.
-2. **Readiness mode:** `tenon probe` runs an agent against an API or MCP server and reports what
+2. **Readiness mode:** `sdkfit probe` runs an agent against an API or MCP server and reports what
    works. Reuses the run-and-verify core and doubles as a lead generator for providers.
 3. **Provider layer (hosted):** vendors push verified migration PRs to their customers. This is
    where vendors may pay. It needs the consumer side to exist first.
@@ -65,7 +65,7 @@ better model never makes it redundant.
 
 ## Non-goals
 
-- Merging anything. Tenon proposes; humans merge.
+- Merging anything. SDK Fit proposes; humans merge.
 - Rewriting code from a changelog alone with no machine-readable source and no proof.
 - Sending customer code to a model the user did not authorize.
 - A general-purpose coding agent.

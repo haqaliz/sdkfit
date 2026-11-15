@@ -9,9 +9,9 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from tenon.pr.api import GitHubApi, GitHubApiError
-from tenon.pr.app import GitHubAppToken, StaticToken, TokenProvider
-from tenon.pr.remote import RemoteError
+from sdkfit.pr.api import GitHubApi, GitHubApiError
+from sdkfit.pr.app import GitHubAppToken, StaticToken, TokenProvider
+from sdkfit.pr.remote import RemoteError
 
 NOW = 1_800_000_000
 API = "https://api.github.com"
@@ -197,7 +197,7 @@ def test_an_empty_body_is_an_empty_dict():
 # body; a GET sends no body.
 def test_the_transport_receives_the_exact_request():
     transport = FakeTransport((201, {}, '{"html_url": "https://github.com/o/r/pull/1"}'))
-    body = {"head": "tenon/x", "base": "main", "title": "t", "body": "b"}
+    body = {"head": "sdkfit/x", "base": "main", "title": "t", "body": "b"}
 
     result = GitHubApi(transport=transport).request(
         "POST", "/repos/o/r/pulls", "tok", body
@@ -273,7 +273,7 @@ def test_an_api_transport_failure_has_no_status():
 
 # Spec AC6: the whole app auth surface is importable from the package.
 def test_the_app_surface_is_exported_from_the_package():
-    import tenon.pr as pr
+    import sdkfit.pr as pr
 
     assert pr.GitHubApi is GitHubApi
     assert pr.GitHubApiError is GitHubApiError
@@ -288,7 +288,7 @@ def test_the_core_package_works_without_the_app_extra():
     code = (
         "import sys\n"
         "sys.modules['jwt'] = None\n"
-        "from tenon.pr import GitHubAppToken, RemoteError, StaticToken\n"
+        "from sdkfit.pr import GitHubAppToken, RemoteError, StaticToken\n"
         "assert StaticToken('t').token() == 't'\n"
         "try:\n"
         "    GitHubAppToken(1, 2, 'pem', lambda *args: None).token()\n"

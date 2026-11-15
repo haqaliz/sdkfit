@@ -11,8 +11,8 @@ bash scripts/launch_demo.sh
 
 The script copies `repo/` to a temp directory and runs the shipped pipeline:
 
-1. `tenon check` finds the affected call site and exits 1.
-2. `tenon fix` rewrites `amount=` to `amount_cents=`, runs the proof command and exits 0.
-3. `tenon provider migrate` runs the same migration from `bundle.json` (dry run: no PR).
+1. `sdkfit check` finds the affected call site and exits 1.
+2. `sdkfit fix` rewrites `amount=` to `amount_cents=`, runs the proof command and exits 0.
+3. `sdkfit provider migrate` runs the same migration from `bundle.json` (dry run: no PR).
 
 Nothing in this directory is modified; the recorded transcript is `docs/launch/DEMO.md`.

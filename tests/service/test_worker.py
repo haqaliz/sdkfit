@@ -1,10 +1,10 @@
 import threading
 import time
 
-from tenon.prove import tail
-from tenon.service.runner import Outcome
-from tenon.service.store import RunStore
-from tenon.service.worker import Worker
+from sdkfit.prove import tail
+from sdkfit.service.runner import Outcome
+from sdkfit.service.store import RunStore
+from sdkfit.service.worker import Worker
 
 
 def a_store(tmp_path):

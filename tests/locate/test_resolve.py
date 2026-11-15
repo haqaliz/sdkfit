@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     AmbiguousGroup,
     Dynamic,
@@ -24,8 +24,8 @@ from tenon.locate import (
     locate,
     scan,
 )
-from tenon.locate.resolve import _build, resolve
-from tenon.locate.scan import DynamicKind
+from sdkfit.locate.resolve import _build, resolve
+from sdkfit.locate.scan import DynamicKind
 
 CONFIG = LocateConfig(sdk_package="stripe")
 CHARGE_PROPERTIES = "#/components/schemas/Charge/properties"

@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import diff, parse
-from tenon.locate import LocateConfig, locate
-from tenon.propose import propose
-from tenon.prove import CheckResult, ProofCause, ProofLevel, ProofResult, ProofStage
+from sdkfit.detect import diff, parse
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.propose import propose
+from sdkfit.prove import CheckResult, ProofCause, ProofLevel, ProofResult, ProofStage
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "repos"
 PROOF_BASIC = FIXTURES / "proof-basic"
@@ -166,8 +166,8 @@ def repo_with_remote(tmp_path):
     _git("init", "--bare", "--initial-branch=main", str(bare))
     shutil.copytree(PROOF_BASIC, work, ignore=shutil.ignore_patterns("__pycache__"))
     _git("init", "-b", "main", cwd=work)
-    _git("config", "user.name", "Tenon Tests", cwd=work)
-    _git("config", "user.email", "tenon@example.test", cwd=work)
+    _git("config", "user.name", "SDK Fit Tests", cwd=work)
+    _git("config", "user.email", "sdkfit@example.test", cwd=work)
     _git("add", ".", cwd=work)
     _git("commit", "-m", "fixture", cwd=work)
     _git("remote", "add", "origin", str(bare), cwd=work)

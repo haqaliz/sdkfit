@@ -6,9 +6,9 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from tenon.pr import PrRefusal, PrStatus
-from tenon.pr.result import PrDraft, PrResult
-from tenon.prove import ProofLevel
+from sdkfit.pr import PrRefusal, PrStatus
+from sdkfit.pr.result import PrDraft, PrResult
+from sdkfit.prove import ProofLevel
 
 
 # Spec AC1: the status vocabulary is exactly two values, in order.
@@ -60,10 +60,10 @@ def test_every_vocabulary_value_is_a_plain_string():
 
 def a_draft(**overrides):
     values = {
-        "title": "[TESTS_PASSED] tenon: rename payment method types",
+        "title": "[TESTS_PASSED] sdkfit: rename payment method types",
         "body": "## Proof\n\n`python -m pytest -q` passed after the patch.",
-        "branch": "tenon/renamed-payment-method-types-a1b2c3d4",
-        "commit_message": "tenon: rename payment method types",
+        "branch": "sdkfit/renamed-payment-method-types-a1b2c3d4",
+        "commit_message": "sdkfit: rename payment method types",
     }
     values.update(overrides)
     return PrDraft(**values)
@@ -72,10 +72,10 @@ def a_draft(**overrides):
 # Spec AC2: a valid draft keeps every field unchanged on access.
 def test_pr_draft_keeps_its_four_fields():
     draft = a_draft()
-    assert draft.title == "[TESTS_PASSED] tenon: rename payment method types"
+    assert draft.title == "[TESTS_PASSED] sdkfit: rename payment method types"
     assert draft.body == "## Proof\n\n`python -m pytest -q` passed after the patch."
-    assert draft.branch == "tenon/renamed-payment-method-types-a1b2c3d4"
-    assert draft.commit_message == "tenon: rename payment method types"
+    assert draft.branch == "sdkfit/renamed-payment-method-types-a1b2c3d4"
+    assert draft.commit_message == "sdkfit: rename payment method types"
 
 
 # Spec AC2: every field must be non-empty.
@@ -103,10 +103,10 @@ def test_pr_draft_to_dict_has_the_contract_keys():
     parsed = a_draft().to_dict()
     assert list(parsed) == ["title", "body", "branch", "commit_message"]
     assert parsed == {
-        "title": "[TESTS_PASSED] tenon: rename payment method types",
+        "title": "[TESTS_PASSED] sdkfit: rename payment method types",
         "body": "## Proof\n\n`python -m pytest -q` passed after the patch.",
-        "branch": "tenon/renamed-payment-method-types-a1b2c3d4",
-        "commit_message": "tenon: rename payment method types",
+        "branch": "sdkfit/renamed-payment-method-types-a1b2c3d4",
+        "commit_message": "sdkfit: rename payment method types",
     }
 
 
@@ -118,13 +118,13 @@ def test_pr_draft_to_json_holds_only_json_primitives():
 
 
 DRAFT_SUBPROCESS_SCRIPT = """
-from tenon.pr.result import PrDraft
+from sdkfit.pr.result import PrDraft
 
 draft = PrDraft(
-    title="[TESTS_PASSED] tenon: rename payment method types",
+    title="[TESTS_PASSED] sdkfit: rename payment method types",
     body="## Proof\\n\\n`python -m pytest -q` passed after the patch.",
-    branch="tenon/renamed-payment-method-types-a1b2c3d4",
-    commit_message="tenon: rename payment method types",
+    branch="sdkfit/renamed-payment-method-types-a1b2c3d4",
+    commit_message="sdkfit: rename payment method types",
 )
 print(draft.to_json(), end="")
 """
@@ -288,13 +288,13 @@ def test_pr_result_to_json_holds_only_json_primitives():
 
 
 RESULT_SUBPROCESS_SCRIPT = """
-from tenon.pr.result import PrDraft, PrResult
+from sdkfit.pr.result import PrDraft, PrResult
 
 draft = PrDraft(
-    title="[UNVERIFIED] tenon: rename payment method types",
+    title="[UNVERIFIED] sdkfit: rename payment method types",
     body="## Proof\\n\\nThe check did not pass.",
-    branch="tenon/renamed-payment-method-types-a1b2c3d4",
-    commit_message="tenon: rename payment method types",
+    branch="sdkfit/renamed-payment-method-types-a1b2c3d4",
+    commit_message="sdkfit: rename payment method types",
 )
 result = PrResult(
     status="REFUSED",
@@ -324,9 +324,9 @@ def test_pr_result_to_json_is_byte_stable_across_hash_seeds():
     assert result_to_json_with_hash_seed("0") == result_to_json_with_hash_seed("1")
 
 
-# Plan phase 4: `tenon.pr` is the public surface for the contract and the renderer.
+# Plan phase 4: `sdkfit.pr` is the public surface for the contract and the renderer.
 def test_package_exports_the_public_contract():
-    from tenon.pr import (
+    from sdkfit.pr import (
         PrDraft,
         PrRefusal,
         PrResult,

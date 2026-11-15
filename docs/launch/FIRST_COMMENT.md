@@ -3,10 +3,10 @@
 > Update the product name and links here if the decision in [`NAME_CHECK.md`](NAME_CHECK.md) changes
 > them.
 
-Hi Product Hunt — I built Tenon because breaking API changes are still discovered by customers in
+Hi Product Hunt — I built SDK Fit because breaking API changes are still discovered by customers in
 production. The vendor knows first; the consumer finds out last.
 
-Tenon reads the old and new OpenAPI spec (or MCP tool schema), finds the consumer call sites that
+SDK Fit reads the old and new OpenAPI spec (or MCP tool schema), finds the consumer call sites that
 break, rewrites only the ones it can prove, runs the consumer's own checks before and after, and only
 then offers a reviewed PR. It labels every result with the proof that actually passed
 (`TESTS_PASSED`, `CHARACTERIZED`, `REPLAYED`, `TYPES_BUILD_ONLY`) and leaves the uncertain sites
@@ -25,10 +25,10 @@ Two questions I would love your take on:
 The demo is offline and runs from the repo (about 30 seconds):
 
 ```sh
-git clone https://github.com/haqaliz/tenon.git
-cd tenon
+git clone https://github.com/haqaliz/sdkfit.git
+cd sdkfit
 uv sync
 bash scripts/launch_demo.sh
 ```
 
-Source, docs and the demo: https://github.com/haqaliz/tenon — thanks for looking.
+Source, docs and the demo: https://github.com/haqaliz/sdkfit — thanks for looking.

@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tenon-config
+  name: sdkfit-config
   labels:
-    app: tenon
+    app: sdkfit
 data:
   app-id: "replace-with-the-github-app-id"
   app-installation-id: "replace-with-the-installation-id"
-  git-author-name: Tenon Service
-  git-author-email: tenon@example.com
+  git-author-name: SDK Fit Service
+  git-author-email: sdkfit@example.com

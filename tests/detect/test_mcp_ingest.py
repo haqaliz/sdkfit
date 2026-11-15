@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import RefusalCode, SpecRefusal
-from tenon.detect.mcp_ingest import load_mcp, parse_mcp
+from sdkfit.detect import RefusalCode, SpecRefusal
+from sdkfit.detect.mcp_ingest import load_mcp, parse_mcp
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "mcp"
 
@@ -242,7 +242,7 @@ SUBPROCESS_SCRIPT = f"""
 import json
 from pathlib import Path
 
-from tenon.detect.mcp_ingest import load_mcp
+from sdkfit.detect.mcp_ingest import load_mcp
 
 document = load_mcp(Path({str(FIXTURES / "tools-v1.json")!r}))
 print(json.dumps(document, sort_keys=True), end="")
@@ -276,11 +276,11 @@ def test_the_mcp_document_is_stable_across_tool_order():
 
 
 # Spec AC6: the package exports the MCP loaders; load/parse/diff stay as shipped.
-def test_tenon_detect_exports_the_mcp_loaders():
-    import tenon.detect
+def test_sdkfit_detect_exports_the_mcp_loaders():
+    import sdkfit.detect
 
-    assert tenon.detect.parse_mcp is parse_mcp
-    assert tenon.detect.load_mcp is load_mcp
-    assert callable(tenon.detect.load)
-    assert callable(tenon.detect.parse)
-    assert callable(tenon.detect.diff)
+    assert sdkfit.detect.parse_mcp is parse_mcp
+    assert sdkfit.detect.load_mcp is load_mcp
+    assert callable(sdkfit.detect.load)
+    assert callable(sdkfit.detect.parse)
+    assert callable(sdkfit.detect.diff)

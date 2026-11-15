@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from tenon.detect import ChangeKind, diff
-from tenon.detect.ingest import load
+from sdkfit.detect import ChangeKind, diff
+from sdkfit.detect.ingest import load
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "specs"
 

@@ -45,7 +45,8 @@ def test_the_launch_kit_is_complete():
 
     launch = (LAUNCH / "LAUNCH.md").read_text(encoding="utf-8")
     for value in (
-        "Blocker",
+        "Name:",
+        "sdkfit.dev",
         "Tagline options",
         "What not to claim",
         "Launch-day checklist",
@@ -57,7 +58,7 @@ def test_the_launch_kit_is_complete():
 
     faq = (LAUNCH / "FAQ.md").read_text(encoding="utf-8")
     for value in (
-        "Is Tenon a SaaS?",
+        "Is SDK Fit a SaaS?",
         "Does it push to my repository?",
         "Does it use an LLM?",
         "Does it auto-merge?",
@@ -71,7 +72,7 @@ def test_the_launch_kit_is_complete():
         assert value in gallery
 
     name_check = (LAUNCH / "NAME_CHECK.md").read_text(encoding="utf-8")
-    for value in ("tenonhq.com", "Blocker", "PyPI", "Product Hunt"):
+    for value in ("sdkfit.com", "sdkfit.dev", "resolved", "PyPI", "Product Hunt"):
         assert value in name_check
 
     comment = (LAUNCH / "FIRST_COMMENT.md").read_text(encoding="utf-8")

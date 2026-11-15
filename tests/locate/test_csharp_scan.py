@@ -2,9 +2,9 @@
 
 import pytest
 
-from tenon.locate import SiteShape
-from tenon.locate.csharp_scan import scan_csharp
-from tenon.locate.scan import Hit
+from sdkfit.locate import SiteShape
+from sdkfit.locate.csharp_scan import scan_csharp
+from sdkfit.locate.scan import Hit
 
 ROOT = "Stripe"
 

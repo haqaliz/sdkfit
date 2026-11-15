@@ -3,16 +3,16 @@ from pathlib import Path
 
 import pytest
 
-from tenon.locate import LocateConfig, load_config
+from sdkfit.locate import LocateConfig, load_config
 
-FIXTURE = Path(__file__).parent.parent / "fixtures" / "tenon.toml"
+FIXTURE = Path(__file__).parent.parent / "fixtures" / "sdkfit.toml"
 
 
 def a_config(**kwargs):
     return LocateConfig(**kwargs)
 
 
-# Spec AC7: all three tables round-trip from a fixture tenon.toml.
+# Spec AC7: all three tables round-trip from a fixture sdkfit.toml.
 def test_load_config_reads_all_three_tables():
     assert load_config(FIXTURE) == LocateConfig(
         sdk_package="stripe",
@@ -30,7 +30,7 @@ def test_load_config_reads_all_three_tables():
     ],
 )
 def test_load_config_names_the_missing_key(tmp_path, text, key):
-    path = tmp_path / "tenon.toml"
+    path = tmp_path / "sdkfit.toml"
     path.write_text(text)
     with pytest.raises(ValueError, match=re.escape(key)):
         load_config(path)

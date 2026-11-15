@@ -4,8 +4,8 @@ import sys
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, LocateReason, Query, derive
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, LocateReason, Query, derive
 
 CONFIG = LocateConfig(sdk_package="stripe")
 
@@ -674,8 +674,8 @@ def test_a_brand_new_required_property_uses_the_enclosing_operation():
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, derive
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, derive
 
 change = Change(
     kind=ChangeKind.ENDPOINT_REMOVED,

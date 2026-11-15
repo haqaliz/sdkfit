@@ -1,7 +1,7 @@
 """The public Go locate API over temp ``.go`` repositories."""
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     GoLocateConfig,
     LocateReason,
@@ -319,7 +319,7 @@ def test_a_repository_without_the_root_import_has_no_sdk_import(tmp_path):
 
 # Spec AC1/M3: the Go config and wrapper are part of the public surface.
 def test_the_go_api_is_exported():
-    import tenon.locate as locate
+    import sdkfit.locate as locate
 
     assert locate.GoLocateConfig is GoLocateConfig
     assert locate.locate_go is locate_go

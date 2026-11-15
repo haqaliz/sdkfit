@@ -3,14 +3,14 @@ services:
     build: .
     env_file: .env
     environment:
-      TENON_API_TOKEN: ${TENON_API_TOKEN:?TENON_API_TOKEN is required}
-      TENON_WEBHOOK_SECRET: ${TENON_WEBHOOK_SECRET:-}
-      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-Tenon Service}
-      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-tenon@localhost}
-      GIT_COMMITTER_NAME: ${GIT_COMMITTER_NAME:-Tenon Service}
-      GIT_COMMITTER_EMAIL: ${GIT_COMMITTER_EMAIL:-tenon@localhost}
+      SDKFIT_API_TOKEN: ${SDKFIT_API_TOKEN:?SDKFIT_API_TOKEN is required}
+      SDKFIT_WEBHOOK_SECRET: ${SDKFIT_WEBHOOK_SECRET:-}
+      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-SDK Fit Service}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-sdkfit@localhost}
+      GIT_COMMITTER_NAME: ${GIT_COMMITTER_NAME:-SDK Fit Service}
+      GIT_COMMITTER_EMAIL: ${GIT_COMMITTER_EMAIL:-sdkfit@localhost}
     volumes:
-      - tenon-data:/data
+      - sdkfit-data:/data
       - ./bundles:/data/bundles:ro
       - ./secrets:/secrets:ro
     tmpfs:
@@ -45,12 +45,12 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     environment:
-      TENON_DOMAIN: ${TENON_DOMAIN:-localhost}
+      SDKFIT_DOMAIN: ${SDKFIT_DOMAIN:-localhost}
     depends_on:
       - service
     restart: unless-stopped
 
 volumes:
-  tenon-data:
+  sdkfit-data:
   caddy-data:
   caddy-config:
