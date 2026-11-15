@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from .store import Run, RunStore
+from .store import Run, Store
 
 _JSON_HEADERS = {"Content-Type": "application/json"}
 
@@ -77,7 +77,7 @@ class Api:
 
     def __init__(
         self,
-        store: RunStore,
+        store: Store,
         bundles: Path,
         token: str,
         *,

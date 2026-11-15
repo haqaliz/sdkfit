@@ -6,7 +6,7 @@ from collections.abc import Callable
 from tenon.prove import tail
 
 from .runner import Outcome
-from .store import Run, RunStore
+from .store import Run, Store
 
 
 class Worker:
@@ -14,7 +14,7 @@ class Worker:
 
     def __init__(
         self,
-        store: RunStore,
+        store: Store,
         execute: Callable[[Run], Outcome],
         *,
         poll: float = 1.0,

@@ -9,7 +9,7 @@ import pytest
 from tenon.service import Event as ExportedEvent
 from tenon.service import Run as ExportedRun
 from tenon.service import RunStore as ExportedRunStore
-from tenon.service.store import Event, Run, RunStore, StoreError
+from tenon.service.store import Event, Run, RunStore, Store, StoreError
 
 NOW = datetime(2026, 11, 11, 12, 0, tzinfo=timezone.utc)
 STAMP = "2026-11-11T12:00:00+00:00"
@@ -908,3 +908,11 @@ def test_the_service_package_exports_the_store_surface():
     assert ExportedRun is Run
     assert ExportedEvent is Event
     assert ExportedRunStore is RunStore
+
+
+# Spec AC1: the SQLite store satisfies the shared protocol and ignores the lease cutoff.
+def test_the_sqlite_store_satisfies_the_protocol():
+    store = RunStore(":memory:")
+
+    assert isinstance(store, Store)
+    assert store.recover(older_than=NOW) == 0
