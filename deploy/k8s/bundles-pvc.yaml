@@ -1,0 +1,13 @@
+# The bundle directory shared by every service replica. A ReadWriteMany class
+# (cloud file share / NFS) is required; each pod mounts it read-only.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tenon-bundles
+  labels:
+    app: tenon
+spec:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 1Gi

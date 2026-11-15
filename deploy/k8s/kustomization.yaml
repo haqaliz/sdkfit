@@ -1,0 +1,10 @@
+# Apply the Secrets/ConfigMap (from the examples) and, optionally, the Postgres
+# example first; then `kubectl apply -k deploy/k8s`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - bundles-pvc.yaml
