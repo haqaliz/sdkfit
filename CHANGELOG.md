@@ -7,6 +7,8 @@ promise: flags, config keys and provider contracts may still change.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-15
+
 ### Added
 
 - **Cross-file receiver inference (T12e):** each scanner indexes annotated helper return types
