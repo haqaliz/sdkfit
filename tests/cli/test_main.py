@@ -15,15 +15,15 @@ from pathlib import Path
 
 import pytest
 
-from tenon.cli import CliConfig, main
-from tenon.corpus import (
+from sdkfit.cli import CliConfig, main
+from sdkfit.corpus import (
     CorpusRecord,
     Outcome,
     benchmark,
     load_corpus,
     record_id,
 )
-from tenon.detect import (
+from sdkfit.detect import (
     Change,
     ChangeKind,
     Location,
@@ -32,14 +32,14 @@ from tenon.detect import (
     load,
     load_mcp,
 )
-from tenon.locate import (
+from sdkfit.locate import (
     CSharpLocateConfig,
     GoLocateConfig,
     LocateConfig,
     RustLocateConfig,
     TsLocateConfig,
 )
-from tenon.pr import (
+from sdkfit.pr import (
     InstalledRepo,
     PrDraft,
     PrRefusal,
@@ -49,48 +49,48 @@ from tenon.pr import (
     StaticToken,
     clone_repo as real_clone_repo,
 )
-from tenon.prove import CheckResult, ProofLevel, ProofPlan, ProofResult
+from sdkfit.prove import CheckResult, ProofLevel, ProofPlan, ProofResult
 
-# ``tenon.cli.main`` the submodule is shadowed by the exported function.
-cli_main = importlib.import_module("tenon.cli.main")
+# ``sdkfit.cli.main`` the submodule is shadowed by the exported function.
+cli_main = importlib.import_module("sdkfit.cli.main")
 
 
 # Spec AC1: help is a 0, and no SystemExit escapes main.
 @pytest.mark.parametrize("argv", [["--help"], ["check", "--help"], ["fix", "--help"]])
 def test_help_returns_zero(argv, capsys):
     assert main(argv) == 0
-    assert "usage: tenon" in capsys.readouterr().out
+    assert "usage: sdkfit" in capsys.readouterr().out
 
 
 # Spec AC1: --version prints the package version and returns 0.
 def test_version_returns_zero(capsys):
     assert main(["--version"]) == 0
     out = capsys.readouterr().out
-    assert out.startswith("tenon ")
+    assert out.startswith("sdkfit ")
     assert out.strip().split(" ", 1)[1]
 
 
 # Spec AC1: a missing or unknown subcommand is a usage error, not a traceback.
 def test_no_subcommand_is_usage(capsys):
     assert main([]) == 2
-    assert "usage: tenon" in capsys.readouterr().err
+    assert "usage: sdkfit" in capsys.readouterr().err
 
 
 def test_unknown_subcommand_is_usage(capsys):
     assert main(["probe"]) == 2
-    assert "usage: tenon" in capsys.readouterr().err
+    assert "usage: sdkfit" in capsys.readouterr().err
 
 
-# Spec AC9: python -m tenon is a runnable module.
+# Spec AC9: python -m sdkfit is a runnable module.
 def test_module_help_subprocess():
     completed = subprocess.run(
-        [sys.executable, "-m", "tenon", "--help"],
+        [sys.executable, "-m", "sdkfit", "--help"],
         capture_output=True,
         text=True,
     )
 
     assert completed.returncode == 0
-    assert "usage: tenon" in completed.stdout
+    assert "usage: sdkfit" in completed.stdout
 
 
 def a_check(repo, specs, *extra):
@@ -149,8 +149,8 @@ def test_sdk_package_flag_overrides_config(a_repo, a_specs, capsys):
 
 # Spec AC7: an operation flag overrides the configured mapping.
 def test_operation_flag_overrides_config(a_repo, a_endpoint_specs, capsys):
-    config = (a_repo / "tenon.toml").read_text(encoding="utf-8")
-    (a_repo / "tenon.toml").write_text(
+    config = (a_repo / "sdkfit.toml").read_text(encoding="utf-8")
+    (a_repo / "sdkfit.toml").write_text(
         config
         + '\n[locate.operations]\n"POST /v1/charges" = "StripeClient.charges.create"\n',
         encoding="utf-8",
@@ -180,7 +180,7 @@ def test_breaking_only_filters_non_breaking_changes(a_repo, a_mixed_specs, capsy
     assert json.loads(capsys.readouterr().out)["summary"]["changes"] == 1
 
 
-# Spec AC7: --no-breaking-only overrides a true [tenon] default.
+# Spec AC7: --no-breaking-only overrides a true [sdkfit] default.
 def test_no_breaking_only_overrides_the_config(a_repo, a_mixed_specs, a_breaking_config, capsys):
     flags = ("--config", str(a_breaking_config), "--json")
 
@@ -191,7 +191,7 @@ def test_no_breaking_only_overrides_the_config(a_repo, a_mixed_specs, a_breaking
     assert json.loads(capsys.readouterr().out)["summary"]["changes"] == 2
 
 
-# Spec AC7: a missing tenon.toml is valid when --sdk-package supplies the package.
+# Spec AC7: a missing sdkfit.toml is valid when --sdk-package supplies the package.
 def test_missing_config_with_sdk_package_is_valid(a_repo_without_config, a_specs, capsys):
     assert (
         a_check(a_repo_without_config, a_specs, "--sdk-package", "acme.client") == 1
@@ -217,7 +217,7 @@ def test_check_ts_language_from_the_config(a_ts_repo, capsys):
 
 # Spec AC3: --language ts overrides a file written for Python.
 def test_check_language_flag_overrides_a_python_config(a_ts_repo, capsys):
-    (a_ts_repo.repo / "tenon.toml").write_text(
+    (a_ts_repo.repo / "sdkfit.toml").write_text(
         '[locate]\nsdk_package = "stripe"\n'
     )
 
@@ -259,7 +259,7 @@ def test_check_ts_without_a_site_exits_zero(a_ts_repo, capsys):
 
 # Spec AC5: --language python validates the file's npm package as Python.
 def test_language_python_rejects_a_scoped_npm_package(a_ts_repo, capsys):
-    (a_ts_repo.repo / "tenon.toml").write_text(
+    (a_ts_repo.repo / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "ts"\nsdk_package = "@scope/pkg"\n'
     )
 
@@ -281,7 +281,7 @@ def test_unknown_language_flag_is_usage(a_ts_repo, capsys):
 
 # Spec AC5: a missing file builds the TS default from --sdk-package.
 def test_missing_config_with_language_ts_uses_sdk_package(a_ts_repo, capsys):
-    (a_ts_repo.repo / "tenon.toml").unlink()
+    (a_ts_repo.repo / "sdkfit.toml").unlink()
 
     assert (
         a_check(
@@ -299,7 +299,7 @@ def test_missing_config_with_language_ts_uses_sdk_package(a_ts_repo, capsys):
 
 # Spec AC5: --language ts without any package is still a usage error.
 def test_missing_config_with_language_ts_without_package_is_usage(a_ts_repo, capsys):
-    (a_ts_repo.repo / "tenon.toml").unlink()
+    (a_ts_repo.repo / "sdkfit.toml").unlink()
 
     assert a_check(a_ts_repo.repo, a_ts_repo.specs, "--language", "ts") == 2
     assert "sdk-package" in capsys.readouterr().err
@@ -307,7 +307,7 @@ def test_missing_config_with_language_ts_without_package_is_usage(a_ts_repo, cap
 
 # Spec AC1/AC3: [locate] language = "rust" is enough; no flag is needed.
 def test_check_rust_language_from_the_config(tmp_path, a_specs, capsys):
-    (tmp_path / "tenon.toml").write_text(
+    (tmp_path / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "rust"\nsdk_package = "stripe"\n'
     )
 
@@ -440,7 +440,7 @@ def test_receiver_is_a_repeatable_common_flag(command):
 
 # Spec AC4: --receiver reaches the Rust config and wins over the file.
 def test_receiver_flag_reaches_the_rust_config(tmp_path):
-    (tmp_path / "tenon.toml").write_text(
+    (tmp_path / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "rust"\nsdk_package = "stripe"\n'
         '\n[locate.receivers]\n"stripe.NewClient" = "FileClient"\n'
     )
@@ -517,7 +517,7 @@ def test_missing_config_fallback_builds_the_receivers(
 def test_receiver_flag_reaches_every_language(
     tmp_path, language, sdk_package, expected_type
 ):
-    (tmp_path / "tenon.toml").write_text(
+    (tmp_path / "sdkfit.toml").write_text(
         f'[locate]\nlanguage = "{language}"\nsdk_package = "{sdk_package}"\n'
         '\n[locate.receivers]\n"stripe.NewClient" = "FileClient"\n'
     )
@@ -736,7 +736,7 @@ def test_missing_config_with_language_go_locates(tmp_path, a_specs, capsys):
     assert "NO_SDK_IMPORT" in capsys.readouterr().out
 
 
-# Spec AC1/AC3: the temp tenon.toml selects Rust; the struct field is reported.
+# Spec AC1/AC3: the temp sdkfit.toml selects Rust; the struct field is reported.
 def test_check_rust_reports_the_struct_field(a_rust_repo, capsys):
     assert (
         a_check(
@@ -820,7 +820,7 @@ def test_fix_rust_proposes_and_proves_the_rename(
     assert a_snapshot(a_rust_repo.repo) == before
 
 
-# Spec AC1: the temp tenon.toml selects Go; the literal key is reported.
+# Spec AC1: the temp sdkfit.toml selects Go; the literal key is reported.
 def test_check_go_reports_the_literal_field(a_go_repo, capsys):
     assert (
         a_check(
@@ -910,7 +910,7 @@ def test_fix_go_proposes_and_proves_the_rename(
     assert a_snapshot(a_go_repo.repo) == before
 
 
-# Spec AC1: the temp tenon.toml selects C#; the initializer property is reported.
+# Spec AC1: the temp sdkfit.toml selects C#; the initializer property is reported.
 def test_check_csharp_reports_the_initializer_property(a_csharp_repo, capsys):
     assert (
         a_check(
@@ -1083,7 +1083,7 @@ def test_language_ts_with_source_mcp_json_is_one_error(
     assert captured.out.count("\n") == 1
 
 
-# Spec AC2/AC5: --source overrides the default, and a missing tenon.toml
+# Spec AC2/AC5: --source overrides the default, and a missing sdkfit.toml
 # still uses the default mcp client package.
 def test_check_mcp_flag_overrides_the_default_source(
     a_mcp_repo_without_config, a_mcp_specs, capsys
@@ -1309,11 +1309,11 @@ def test_fix_stage_flags_reach_one_plan(a_repo, a_specs, monkeypatch):
     ]
 
 
-# Spec AC1: a missing stage flag falls back to [tenon], not to empty.
+# Spec AC1: a missing stage flag falls back to [sdkfit], not to empty.
 def test_fix_stage_commands_fall_back_to_the_config(a_repo, a_specs, monkeypatch):
-    (a_repo / "tenon.toml").write_text(
+    (a_repo / "sdkfit.toml").write_text(
         '[locate]\nsdk_package = "acme.client"\n'
-        "\n[tenon]\n"
+        "\n[sdkfit]\n"
         'command = ["tests", "from", "config"]\n'
         'build = ["build", "from", "config"]\n'
         'characterize = ["characterize", "from", "config"]\n'
@@ -1469,7 +1469,7 @@ def test_fix_mcp_source_from_the_config(
 
 # Spec AC5: --language ts with a package npm cannot accept is a named config error.
 def test_language_ts_rejects_an_invalid_npm_package(a_ts_repo, capsys):
-    (a_ts_repo.repo / "tenon.toml").write_text(
+    (a_ts_repo.repo / "sdkfit.toml").write_text(
         '[locate]\nsdk_package = "acme/client"\n'
     )
 
@@ -1482,7 +1482,7 @@ def test_language_ts_rejects_an_invalid_npm_package(a_ts_repo, capsys):
 
 # Spec AC2/AC5: a TS config with an invalid Python package is one JSON error object.
 def test_ts_config_invalid_python_package_json_is_one_error(a_ts_repo, capsys):
-    (a_ts_repo.repo / "tenon.toml").write_text(
+    (a_ts_repo.repo / "sdkfit.toml").write_text(
         '[locate]\nlanguage = "ts"\nsdk_package = "@scope/pkg"\n'
     )
 
@@ -1508,10 +1508,10 @@ def test_ts_config_invalid_python_package_json_is_one_error(a_ts_repo, capsys):
 
 def a_pr(proof, status=PrStatus.OPENED, refusal=None):
     draft = PrDraft(
-        title=f"[{proof.level.value}] tenon: rename",
+        title=f"[{proof.level.value}] sdkfit: rename",
         body="body",
-        branch="tenon/rename-1234abcd",
-        commit_message="tenon: rename",
+        branch="sdkfit/rename-1234abcd",
+        commit_message="sdkfit: rename",
     )
     if status is PrStatus.OPENED:
         return PrResult(
@@ -1717,10 +1717,10 @@ def test_fix_open_pr_builds_the_default_remote(a_repo, a_specs, monkeypatch):
 
 
 APP_ENV = (
-    "TENON_GITHUB_APP_ID",
-    "TENON_GITHUB_APP_INSTALLATION_ID",
-    "TENON_GITHUB_APP_PRIVATE_KEY",
-    "TENON_GITHUB_API_URL",
+    "SDKFIT_GITHUB_APP_ID",
+    "SDKFIT_GITHUB_APP_INSTALLATION_ID",
+    "SDKFIT_GITHUB_APP_PRIVATE_KEY",
+    "SDKFIT_GITHUB_API_URL",
 )
 
 
@@ -1845,10 +1845,10 @@ def test_fix_open_pr_remote_app_reads_the_env(
     a_repo, a_specs, tmp_path, monkeypatch, a_app_env
 ):
     key = a_app_key(tmp_path)
-    a_app_env.setenv("TENON_GITHUB_APP_ID", "111")
-    a_app_env.setenv("TENON_GITHUB_APP_INSTALLATION_ID", "222")
-    a_app_env.setenv("TENON_GITHUB_APP_PRIVATE_KEY", str(key))
-    a_app_env.setenv("TENON_GITHUB_API_URL", "https://env.example/api/v3")
+    a_app_env.setenv("SDKFIT_GITHUB_APP_ID", "111")
+    a_app_env.setenv("SDKFIT_GITHUB_APP_INSTALLATION_ID", "222")
+    a_app_env.setenv("SDKFIT_GITHUB_APP_PRIVATE_KEY", str(key))
+    a_app_env.setenv("SDKFIT_GITHUB_API_URL", "https://env.example/api/v3")
     tokens, remotes = a_app_recorders(monkeypatch)
     write_pr, calls = a_recorder(a_pr)
     monkeypatch.setattr(cli_main, "write_pr", write_pr)
@@ -1872,10 +1872,10 @@ def test_fix_open_pr_remote_app_flags_win_over_the_env(
 ):
     env_key = a_app_key(tmp_path, "env.pem")
     flag_key = a_app_key(tmp_path, "flag.pem")
-    a_app_env.setenv("TENON_GITHUB_APP_ID", "111")
-    a_app_env.setenv("TENON_GITHUB_APP_INSTALLATION_ID", "222")
-    a_app_env.setenv("TENON_GITHUB_APP_PRIVATE_KEY", str(env_key))
-    a_app_env.setenv("TENON_GITHUB_API_URL", "https://env.example/api/v3")
+    a_app_env.setenv("SDKFIT_GITHUB_APP_ID", "111")
+    a_app_env.setenv("SDKFIT_GITHUB_APP_INSTALLATION_ID", "222")
+    a_app_env.setenv("SDKFIT_GITHUB_APP_PRIVATE_KEY", str(env_key))
+    a_app_env.setenv("SDKFIT_GITHUB_API_URL", "https://env.example/api/v3")
     tokens, remotes = a_app_recorders(monkeypatch)
     monkeypatch.setattr(cli_main, "write_pr", a_recorder(a_pr)[0])
 
@@ -1917,14 +1917,14 @@ def test_fix_open_pr_remote_app_uses_the_default_api_url(
 @pytest.mark.parametrize(
     ("omitted", "message"),
     [
-        ("--app-id", "--app-id or TENON_GITHUB_APP_ID"),
+        ("--app-id", "--app-id or SDKFIT_GITHUB_APP_ID"),
         (
             "--app-installation-id",
-            "--app-installation-id or TENON_GITHUB_APP_INSTALLATION_ID",
+            "--app-installation-id or SDKFIT_GITHUB_APP_INSTALLATION_ID",
         ),
         (
             "--app-private-key",
-            "--app-private-key or TENON_GITHUB_APP_PRIVATE_KEY",
+            "--app-private-key or SDKFIT_GITHUB_APP_PRIVATE_KEY",
         ),
     ],
 )
@@ -2063,7 +2063,7 @@ def test_bad_spec_is_a_named_refusal(a_repo, a_specs, tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "tenon: spec:" in captured.err
+    assert "sdkfit: spec:" in captured.err
     assert "UNSUPPORTED_VERSION" in captured.err
     assert "Traceback" not in captured.err
 
@@ -2087,15 +2087,15 @@ def test_bad_spec_json_is_one_error_object_on_stdout(a_repo, a_specs, tmp_path, 
     assert captured.out.count("\n") == 1
 
 
-# Spec AC8: a malformed tenon.toml is a named config error.
+# Spec AC8: a malformed sdkfit.toml is a named config error.
 def test_bad_toml_is_a_config_error(a_repo, a_specs, capsys):
-    (a_repo / "tenon.toml").write_text("[locate\n")
+    (a_repo / "sdkfit.toml").write_text("[locate\n")
 
     assert a_check(a_repo, a_specs) == 2
 
     err = capsys.readouterr().err
-    assert "tenon: config:" in err
-    assert "tenon.toml" in err
+    assert "sdkfit: config:" in err
+    assert "sdkfit.toml" in err
     assert "Traceback" not in err
 
 
@@ -2121,10 +2121,10 @@ def test_unknown_require_names_the_five_levels(a_repo, a_specs, capsys):
     assert "UNVERIFIED" in err
 
 
-# Spec AC2/AC7: a bad [tenon] require in --json mode is one error object.
+# Spec AC2/AC7: a bad [sdkfit] require in --json mode is one error object.
 def test_bad_require_in_the_config_json_is_one_error(a_repo, a_specs, capsys):
-    (a_repo / "tenon.toml").write_text(
-        '[locate]\nsdk_package = "acme.client"\n\n[tenon]\nrequire = "BY_HAND"\n'
+    (a_repo / "sdkfit.toml").write_text(
+        '[locate]\nsdk_package = "acme.client"\n\n[sdkfit]\nrequire = "BY_HAND"\n'
     )
 
     assert a_fix(a_repo, a_specs, "--json") == 2
@@ -2148,7 +2148,7 @@ def test_unexpected_failure_is_internal(a_repo, a_specs, monkeypatch, capsys):
     assert a_check(a_repo, a_specs) == 1
 
     captured = capsys.readouterr()
-    assert "tenon: internal: boom" in captured.err
+    assert "sdkfit: internal: boom" in captured.err
     assert "Traceback" not in captured.err
 
 
@@ -2158,7 +2158,7 @@ def a_run_module_check(repo, specs, seed, *extra):
         [
             sys.executable,
             "-m",
-            "tenon",
+            "sdkfit",
             "check",
             str(repo),
             "--old",
@@ -2179,7 +2179,7 @@ def a_run_module_fix(repo, specs, seed, *extra):
         [
             sys.executable,
             "-m",
-            "tenon",
+            "sdkfit",
             "fix",
             str(repo),
             "--old",
@@ -2502,7 +2502,7 @@ def test_provider_migrate_red_check_exits_one(tmp_path, capsys):
 )
 def test_provider_help_returns_zero(argv, capsys):
     assert main(argv) == 0
-    assert "usage: tenon provider" in capsys.readouterr().out
+    assert "usage: sdkfit provider" in capsys.readouterr().out
 
 
 # Spec AC2: --check overrides the bundle's (empty) command.
@@ -2642,7 +2642,7 @@ def a_run_module_provider(bundle, seed):
         [
             sys.executable,
             "-m",
-            "tenon",
+            "sdkfit",
             "provider",
             "migrate",
             str(PROOF_BASIC),
@@ -2934,7 +2934,7 @@ def test_provider_bad_spec_is_a_named_spec_error(tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "tenon: spec:" in captured.err
+    assert "sdkfit: spec:" in captured.err
     assert "UNSUPPORTED_VERSION" in captured.err
     assert "Traceback" not in captured.err
 
@@ -3145,7 +3145,7 @@ def a_run_module_fanout(bundle, repos, seed):
         [
             sys.executable,
             "-m",
-            "tenon",
+            "sdkfit",
             "provider",
             "migrate",
             "--bundle",
@@ -3435,7 +3435,7 @@ def test_fanout_shared_bad_spec_exits_two(tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "tenon: spec:" in captured.err
+    assert "sdkfit: spec:" in captured.err
     assert "UNSUPPORTED_VERSION" in captured.err
     assert "Traceback" not in captured.err
 
@@ -3463,14 +3463,14 @@ def test_installed_remote_gh_is_usage(tmp_path, capsys):
 @pytest.mark.parametrize(
     ("omitted", "message"),
     [
-        ("--app-id", "--app-id or TENON_GITHUB_APP_ID"),
+        ("--app-id", "--app-id or SDKFIT_GITHUB_APP_ID"),
         (
             "--app-installation-id",
-            "--app-installation-id or TENON_GITHUB_APP_INSTALLATION_ID",
+            "--app-installation-id or SDKFIT_GITHUB_APP_INSTALLATION_ID",
         ),
         (
             "--app-private-key",
-            "--app-private-key or TENON_GITHUB_APP_PRIVATE_KEY",
+            "--app-private-key or SDKFIT_GITHUB_APP_PRIVATE_KEY",
         ),
     ],
 )
@@ -3564,8 +3564,8 @@ def a_clone_source(tmp_path):
     )
     for argv in (
         ["git", "init", "-b", "main"],
-        ["git", "config", "user.name", "Tenon Tests"],
-        ["git", "config", "user.email", "tenon@example.test"],
+        ["git", "config", "user.name", "SDK Fit Tests"],
+        ["git", "config", "user.email", "sdkfit@example.test"],
         ["git", "add", "."],
         ["git", "commit", "-m", "fixture"],
     ):
@@ -3618,7 +3618,7 @@ def test_installed_two_repos_clone_and_pass(tmp_path, monkeypatch, capsys):
     )
     provider, seen = a_installed_app(monkeypatch, repos)
     clones = a_real_clone_recorder(monkeypatch)
-    before = set(Path(tempfile.gettempdir()).glob("tenon-installed-*"))
+    before = set(Path(tempfile.gettempdir()).glob("sdkfit-installed-*"))
 
     assert a_installed(bundle) == 0
 
@@ -3633,7 +3633,7 @@ def test_installed_two_repos_clone_and_pass(tmp_path, monkeypatch, capsys):
     assert token == INSTALLED_TOKEN
     assert api._api_url == INSTALLED_API_URL
     assert [call[1] for call in clones] == [INSTALLED_TOKEN, INSTALLED_TOKEN]
-    assert set(Path(tempfile.gettempdir()).glob("tenon-installed-*")) == before
+    assert set(Path(tempfile.gettempdir()).glob("sdkfit-installed-*")) == before
     assert INSTALLED_TOKEN not in captured.out + captured.err
 
 
@@ -3904,7 +3904,7 @@ def test_installed_shared_bad_spec_exits_two(tmp_path, monkeypatch, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "tenon: spec:" in captured.err
+    assert "sdkfit: spec:" in captured.err
     assert "UNSUPPORTED_VERSION" in captured.err
     assert "Traceback" not in captured.err
 
@@ -4005,7 +4005,7 @@ def test_probe_help_returns_zero(capsys):
     assert main(["probe", "--help"]) == 0
 
     out = capsys.readouterr().out
-    assert "usage: tenon probe" in out
+    assert "usage: sdkfit probe" in out
     assert "--server-cmd" in out
     assert "--tasks" in out
     assert "--agent" in out
@@ -4101,7 +4101,7 @@ def test_probe_bad_tasks_text_is_one_stderr_line(tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err.startswith("tenon: probe: invalid_tasks:")
+    assert captured.err.startswith("sdkfit: probe: invalid_tasks:")
     assert "invalid JSON" in captured.err
     assert "Traceback" not in captured.err
 
@@ -4123,7 +4123,7 @@ def test_probe_bad_agent_spawn_json_is_one_error(capsys):
         "--tasks",
         str(PROBE_TASKS),
         "--agent",
-        "/tenon-no-such-agent-xyz",
+        "/sdkfit-no-such-agent-xyz",
         "--timeout",
         "5",
         "--json",
@@ -4869,9 +4869,9 @@ def test_benchmark_readme_documents_the_method_and_no_merge_outcomes():
     lowered = text.lower()
 
     assert "docs/benchmark/corpus.jsonl" in text
-    assert "tenon corpus record" in text
-    assert "tenon corpus outcome" in text
-    assert "tenon corpus report --corpus docs/benchmark/corpus.jsonl" in text
+    assert "sdkfit corpus record" in text
+    assert "sdkfit corpus outcome" in text
+    assert "sdkfit corpus report --corpus docs/benchmark/corpus.jsonl" in text
     assert "no merge outcomes yet" in lowered
     assert "merge rate n/a" in lowered
     for outcome in (
@@ -5080,7 +5080,7 @@ def test_provider_serve_wires_triggers_into_the_api(tmp_path, monkeypatch):
 def test_provider_serve_bounds_are_named_usage_errors(
     tmp_path, monkeypatch, capsys, flag, value, message
 ):
-    monkeypatch.delenv("TENON_API_TOKEN", raising=False)
+    monkeypatch.delenv("SDKFIT_API_TOKEN", raising=False)
     bundles = tmp_path / "bundles"
     bundles.mkdir()
 
@@ -5126,13 +5126,13 @@ def test_provider_serve_flags_must_be_integers(tmp_path, capsys, flag, value):
 def test_provider_serve_missing_token_is_usage(
     tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.delenv("TENON_API_TOKEN", raising=False)
+    monkeypatch.delenv("SDKFIT_API_TOKEN", raising=False)
 
     assert main(a_serve_argv(tmp_path)) == 2
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert "--api-token or TENON_API_TOKEN" in captured.err
+    assert "--api-token or SDKFIT_API_TOKEN" in captured.err
     assert "Traceback" not in captured.err
     assert not (tmp_path / "runs.db").exists()
 
@@ -5141,25 +5141,25 @@ def test_provider_serve_missing_token_is_usage(
 def test_provider_serve_empty_token_is_usage(
     tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.delenv("TENON_API_TOKEN", raising=False)
+    monkeypatch.delenv("SDKFIT_API_TOKEN", raising=False)
 
     assert main(a_serve_argv(tmp_path, "--api-token", "")) == 2
 
-    assert "--api-token or TENON_API_TOKEN" in capsys.readouterr().err
+    assert "--api-token or SDKFIT_API_TOKEN" in capsys.readouterr().err
 
 
-# Spec AC1: the token may come from TENON_API_TOKEN.
+# Spec AC1: the token may come from SDKFIT_API_TOKEN.
 def test_provider_serve_reads_the_token_from_the_env(
     tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.setenv("TENON_API_TOKEN", SERVE_TOKEN)
+    monkeypatch.setenv("SDKFIT_API_TOKEN", SERVE_TOKEN)
     missing = tmp_path / "missing"
 
     assert main(a_serve_argv(tmp_path, bundles=missing)) == 2
 
     err = capsys.readouterr().err
     assert "not a directory" in err
-    assert "TENON_API_TOKEN" not in err
+    assert "SDKFIT_API_TOKEN" not in err
 
 
 # Spec AC1: --bundles must be an existing directory.
@@ -5167,7 +5167,7 @@ def test_provider_serve_reads_the_token_from_the_env(
 def test_provider_serve_bundles_must_be_a_directory(
     tmp_path, monkeypatch, capsys, kind
 ):
-    monkeypatch.delenv("TENON_API_TOKEN", raising=False)
+    monkeypatch.delenv("SDKFIT_API_TOKEN", raising=False)
     bundles = tmp_path / "bundles"
     if kind == "file":
         bundles.write_text("not a directory")
@@ -5181,7 +5181,7 @@ def test_provider_serve_bundles_must_be_a_directory(
 
 # Spec AC1: a db whose parent is missing is a named usage error.
 def test_provider_serve_bad_db_is_usage(tmp_path, monkeypatch, capsys):
-    monkeypatch.delenv("TENON_API_TOKEN", raising=False)
+    monkeypatch.delenv("SDKFIT_API_TOKEN", raising=False)
     bundles = tmp_path / "bundles"
     bundles.mkdir()
     db = tmp_path / "missing" / "runs.db"
@@ -5199,7 +5199,7 @@ def test_provider_serve_bad_db_is_usage(tmp_path, monkeypatch, capsys):
 def test_provider_serve_does_not_hit_the_remote_guard(
     tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.delenv("TENON_API_TOKEN", raising=False)
+    monkeypatch.delenv("SDKFIT_API_TOKEN", raising=False)
     bundles = tmp_path / "missing"
 
     assert main(a_serve_argv(tmp_path, "--api-token", SERVE_TOKEN, bundles=bundles)) == 2
@@ -5213,8 +5213,8 @@ def test_provider_serve_does_not_hit_the_remote_guard(
 
 # Spec AC4: the worker maps a run's bundle name to a confined path before the runner.
 def test_serve_execute_resolves_the_bundle_name(tmp_path):
-    from tenon.service import Run
-    from tenon.service.runner import Outcome as RunOutcome
+    from sdkfit.service import Run
+    from sdkfit.service.runner import Outcome as RunOutcome
 
     bundles = tmp_path / "bundles"
     bundles.mkdir()
@@ -5243,8 +5243,8 @@ def test_serve_execute_resolves_the_bundle_name(tmp_path):
 
 # Spec AC2: the service wires the store's cancel flag into the runner.
 def test_serve_execute_passes_the_cancel_predicate(tmp_path):
-    from tenon.service import Run
-    from tenon.service.runner import Outcome as RunOutcome
+    from sdkfit.service import Run
+    from sdkfit.service.runner import Outcome as RunOutcome
 
     bundles = tmp_path / "bundles"
     bundles.mkdir()
@@ -5280,7 +5280,7 @@ def test_serve_command_builds_the_installed_migrate_argv(tmp_path):
     assert argv == [
         sys.executable,
         "-c",
-        "from tenon.cli import main; raise SystemExit(main())",
+        "from sdkfit.cli import main; raise SystemExit(main())",
         "provider",
         "migrate",
         "--installed",
@@ -5358,7 +5358,7 @@ def test_provider_serve_starts_the_worker_and_stops_on_interrupt(
 
     captured = capsys.readouterr()
     assert captured.err == (
-        "tenon: provider serve: listening on http://127.0.0.1:8080\n"
+        "sdkfit: provider serve: listening on http://127.0.0.1:8080\n"
     )
     assert seen["host"] == "127.0.0.1"
     assert seen["port"] == 8080
@@ -5371,7 +5371,7 @@ def test_provider_serve_starts_the_worker_and_stops_on_interrupt(
 def test_provider_serve_recovers_and_starts_n_workers(
     tmp_path, monkeypatch, capsys
 ):
-    from tenon.service.store import RunStore
+    from sdkfit.service.store import RunStore
 
     bundles = tmp_path / "bundles"
     bundles.mkdir()
@@ -5411,11 +5411,11 @@ def test_provider_serve_recovers_and_starts_n_workers(
         recovered.close()
 
 
-# Spec AC1/AC5: the webhook secret may come from TENON_WEBHOOK_SECRET.
+# Spec AC1/AC5: the webhook secret may come from SDKFIT_WEBHOOK_SECRET.
 def test_provider_serve_reads_the_webhook_secret_from_the_env(
     tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.setenv("TENON_WEBHOOK_SECRET", "hook-secret")
+    monkeypatch.setenv("SDKFIT_WEBHOOK_SECRET", "hook-secret")
     bundles = tmp_path / "bundles"
     bundles.mkdir()
     seen, _server = a_fake_server(monkeypatch)
@@ -5472,7 +5472,7 @@ def test_provider_serve_database_url_selects_postgres(tmp_path, monkeypatch):
             "--api-token",
             SERVE_TOKEN,
             "--database-url",
-            "postgresql://db/tenon",
+            "postgresql://db/sdkfit",
             "--run-timeout",
             "60",
             bundles=bundles,
@@ -5480,14 +5480,14 @@ def test_provider_serve_database_url_selects_postgres(tmp_path, monkeypatch):
     )
 
     assert code == 0
-    assert state["dsns"] == ["postgresql://db/tenon"]
+    assert state["dsns"] == ["postgresql://db/sdkfit"]
     delta = (datetime.now(timezone.utc) - state["older_than"]).total_seconds()
     assert 30 <= delta <= 600
 
 
-# Spec AC1: TENON_DATABASE_URL is the environment form of --database-url.
+# Spec AC1: SDKFIT_DATABASE_URL is the environment form of --database-url.
 def test_provider_serve_reads_the_database_url_from_the_env(tmp_path, monkeypatch):
-    monkeypatch.setenv("TENON_DATABASE_URL", "postgresql://env/tenon")
+    monkeypatch.setenv("SDKFIT_DATABASE_URL", "postgresql://env/sdkfit")
     bundles = tmp_path / "bundles"
     bundles.mkdir()
     state = a_fake_postgres_store(monkeypatch)
@@ -5499,7 +5499,7 @@ def test_provider_serve_reads_the_database_url_from_the_env(tmp_path, monkeypatc
         == 0
     )
 
-    assert state["dsns"] == ["postgresql://env/tenon"]
+    assert state["dsns"] == ["postgresql://env/sdkfit"]
 
 
 # Spec AC2: both store flags are ambiguous and never open a store.
@@ -5513,7 +5513,7 @@ def test_provider_serve_rejects_both_stores(tmp_path, capsys):
             "--api-token",
             SERVE_TOKEN,
             "--database-url",
-            "postgresql://db/tenon",
+            "postgresql://db/sdkfit",
             bundles=bundles,
         )
     )
@@ -5555,11 +5555,11 @@ def test_provider_serve_postgres_without_the_driver_is_a_usage_error(
             "--api-token",
             SERVE_TOKEN,
             "--database-url",
-            "postgresql://db/tenon",
+            "postgresql://db/sdkfit",
             bundles=bundles,
         )
     )
 
     err = capsys.readouterr().err
     assert code == 2
-    assert "tenonhq[postgres]" in err
+    assert "sdkfit[postgres]" in err

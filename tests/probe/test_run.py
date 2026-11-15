@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-import tenon.probe.run as run_module
-from tenon.probe.client import ProbeError
-from tenon.probe.report import CallReport, Summary, ToolInfo
-from tenon.probe.run import probe
-from tenon.probe.tasks import Expectation, Task
+import sdkfit.probe.run as run_module
+from sdkfit.probe.client import ProbeError
+from sdkfit.probe.report import CallReport, Summary, ToolInfo
+from sdkfit.probe.run import probe
+from sdkfit.probe.tasks import Expectation, Task
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "mcp"
 SERVER = FIXTURES / "probe_server.py"
@@ -237,7 +237,7 @@ def test_the_text_is_one_line_per_task_plus_the_summary():
         "PASS echo: echo:hello",
         "summary: 2 tools, 1 task, 1 passed, 0 failed",
     ]
-    from tenon.probe.report import render_text
+    from sdkfit.probe.report import render_text
 
     assert render_text(report) == report.render_text()
 
@@ -288,7 +288,7 @@ def test_a_failed_handshake_is_a_probe_error_before_tasks(tmp_path, server, reas
 # Spec AC6: an unreachable server command is a ProbeError, not a traceback.
 def test_a_server_that_cannot_spawn_is_a_probe_error():
     with pytest.raises(ProbeError) as caught:
-        probe(["/tenon-no-such-server-xyz"], (a_echo_task(),), a_agent(), timeout=5)
+        probe(["/sdkfit-no-such-server-xyz"], (a_echo_task(),), a_agent(), timeout=5)
 
     assert caught.value.reason == "spawn_failed"
 
@@ -332,7 +332,7 @@ def test_the_server_is_closed_when_the_handshake_fails(monkeypatch):
 
 # Spec AC7: descriptions and result excerpts are capped.
 def test_descriptions_and_excerpts_are_capped():
-    from tenon.probe.report import MAX_DESCRIPTION, MAX_EXCERPT
+    from sdkfit.probe.report import MAX_DESCRIPTION, MAX_EXCERPT
 
     tool = ToolInfo.from_tool(
         {"name": "echo", "description": "d" * 5000, "inputSchema": {}}
@@ -344,9 +344,9 @@ def test_descriptions_and_excerpts_are_capped():
     assert len(report.tasks[0].calls[0].result_excerpt) == MAX_EXCERPT
 
 
-# Spec AC7/package: the public surface is exported from tenon.probe.
+# Spec AC7/package: the public surface is exported from sdkfit.probe.
 def test_the_package_exports_the_probe_surface():
-    import tenon.probe as package
+    import sdkfit.probe as package
 
     for name in (
         "probe",
@@ -414,7 +414,7 @@ def test_a_timed_out_agent_is_a_failed_task():
 
 # Spec AC6/PRD M7: an agent that cannot spawn is fatal, and the server closes.
 def test_an_agent_that_cannot_spawn_is_an_agent_error(monkeypatch):
-    from tenon.probe.agent import AgentError
+    from sdkfit.probe.agent import AgentError
 
     made = a_recording_client(monkeypatch)
 
@@ -422,7 +422,7 @@ def test_an_agent_that_cannot_spawn_is_an_agent_error(monkeypatch):
         probe(
             a_server(),
             (a_echo_task(),),
-            ["/tenon-no-such-agent-xyz"],
+            ["/sdkfit-no-such-agent-xyz"],
             timeout=5,
         )
 

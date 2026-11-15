@@ -20,23 +20,23 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --gid 10001 tenon \
-    && useradd --uid 10001 --gid 10001 --create-home --home-dir /home/tenon tenon \
+RUN groupadd --gid 10001 sdkfit \
+    && useradd --uid 10001 --gid 10001 --create-home --home-dir /home/sdkfit sdkfit \
     && mkdir -p /data \
-    && chown tenon:tenon /data
+    && chown sdkfit:sdkfit /data
 
 WORKDIR /app
-COPY --from=build --chown=tenon:tenon /app /app
+COPY --from=build --chown=sdkfit:sdkfit /app /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH=/app/.venv/bin:$PATH
 
-USER tenon
+USER sdkfit
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"
 
-ENTRYPOINT ["tenon"]
-CMD ["provider", "serve", "--bundles", "/data/bundles", "--db", "/data/tenon.db", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["sdkfit"]
+CMD ["provider", "serve", "--bundles", "/data/bundles", "--db", "/data/sdkfit.db", "--host", "0.0.0.0", "--port", "8080"]

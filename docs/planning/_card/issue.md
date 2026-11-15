@@ -1,37 +1,28 @@
-# Card: feat/launch-readiness
+# Card: feat/rename-sdkfit
 
 - **Source:** FALLBACK — no GitHub issue (`gh issue list` is empty).
 - **Owner:** aliz
-- **Type:** feat (launch engineering + docs)
-- **Capability:** **Product Hunt launch readiness** — the last mile between a shipped roadmap and a
-  public launch
-- **Milestone:** after v0.4.0
-- **Branch:** `feat/launch-readiness/aliz`
-- **Worktree:** `.claude/worktrees/feat-launch-readiness`
+- **Type:** feat (rename/launch)
+- **Capability:** **T17 Rename to SDK Fit** — resolve the launch-name blocker
+- **Milestone:** after T16
+- **Branch:** `feat/rename-sdkfit/aliz`
+- **Worktree:** `.claude/worktrees/feat-rename-sdkfit`
 
 ## Brief
 
-T1–T15 are shipped and v0.4.0 is tagged, but a launch would currently point people at an install
-that does not exist (`pip install tenonhq` is gated off) and a container image that was never
-published (`ghcr.io/haqaliz/tenon:0.4.0`). There is also no public demo and no launch copy.
+The T16 name check found that **Tenon**/`tenonhq` collides with the active company at
+**tenonhq.com**. The launch name is now **SDK Fit**, distribution and CLI **`sdkfit`**.
 
-This slice makes the project **launch-ready**, not the launch itself:
-- **PyPI:** switch the gated publish job to trusted publishing (OIDC), add a TestPyPI dry-run path,
-  and prove the install (`pip install tenonhq` → `tenon --version`).
-- **Container image:** build and push `ghcr.io/haqaliz/tenon` on a `v*` tag, so the Kubernetes
-  manifests reference a real image.
-- **Demo:** a deterministic, offline launch demo (a consumer repo + a vendor change + a bundle) with
-  a script that shows `tenon check` and `tenon fix` output an audience can read.
-- **Launch kit:** positioning, tagline, short/long description, FAQ, first-comment draft, gallery
-  plan, launch-day checklist, and a name/handles risk check.
-- **Docs/tests:** the release guide, README launch link, static workflow tests.
+This slice renames the product end to end:
+- distribution, import package, console script, `--version`, env vars (`TENON_*` → `SDKFIT_*`);
+- source/tests/fixtures, Dockerfile/Compose/Caddy, Kubernetes resource names and image path, scripts;
+- README, current technical docs, launch kit, PyPI trusted-publisher guide, changelog/status;
+- optionally the GitHub repository (`haqaliz/tenon` → `haqaliz/sdkfit`); GitHub redirects old URLs.
 
-No new locator/provider/service capability. The actual Product Hunt submission, domain, and hosted
-demo stay out of scope.
+Historical `CHANGELOG.md` entries and `docs/planning/**` records keep the old name. No behavior change
+and no version bump: the release PR will cut **v0.5.0** under the new name.
 
-## External dependencies (user-side, documented)
+## Scope fence
 
-- A PyPI account and the `tenonhq` project with a trusted publisher for this repo/workflow; a
-  TestPyPI project for the dry run.
-- GitHub repo permission to publish packages; make the GHCR package public after the first push.
-- The launch itself: maker account, assets, schedule.
+Not this card: new features, a logo/visual identity, PyPI/GHCR live publishes, the Product Hunt
+submission, backward-compatible `tenon` aliases (pre-1.0, no public PyPI release yet).

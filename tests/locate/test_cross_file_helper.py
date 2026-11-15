@@ -1,6 +1,6 @@
-"""End-to-end cross-file receiver inference through tenon check."""
+"""End-to-end cross-file receiver inference through sdkfit check."""
 
-from tenon.cli import main
+from sdkfit.cli import main
 
 OLD_SPEC = """\
 openapi: 3.1.0

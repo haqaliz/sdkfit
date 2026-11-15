@@ -5,8 +5,8 @@ import sys
 import tomllib
 from pathlib import Path
 
-from tenon.cli import main
-from tenon.provider import load_bundle
+from sdkfit.cli import main
+from sdkfit.provider import load_bundle
 
 ROOT = Path(__file__).parent.parent
 PROOF_BASIC = ROOT / "tests" / "fixtures" / "repos" / "proof-basic"
@@ -25,7 +25,7 @@ def test_version_is_0_4_0(capsys):
     assert a_pyproject()["project"]["version"] == "0.4.0"
 
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out == "tenon 0.4.0\n"
+    assert capsys.readouterr().out == "sdkfit 0.4.0\n"
 
 
 # Spec AC2: the 0.2.0 changelog section exists and names the limits.
@@ -39,7 +39,7 @@ def test_changelog_has_the_0_4_0_section():
 # Spec AC3/AC4: the checklist and the release-check script exist.
 def test_release_checklist_and_script_exist():
     checklist = (ROOT / "docs" / "RELEASE.md").read_text(encoding="utf-8")
-    for step in ("uv build", "pip install", "tenon --version", "gh release create"):
+    for step in ("uv build", "pip install", "sdkfit --version", "gh release create"):
         assert step in checklist
     script = ROOT / "scripts" / "release_check.sh"
     assert script.is_file()

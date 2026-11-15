@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from tenon.corpus.record import CorpusRecord, Outcome, record_id
+from sdkfit.corpus.record import CorpusRecord, Outcome, record_id
 
 REPO = "https://github.com/o/r"
 COMMIT = "56e69cf1c8b0d4e2f0a7c9b3d5e7f1a2c4b6d8e0"
@@ -291,7 +291,7 @@ def test_record_id_ignores_other_proposal_keys():
 
 # Spec: the package exports the record and store surface.
 def test_package_exports_the_public_surface():
-    import tenon.corpus as corpus
+    import sdkfit.corpus as corpus
 
     assert set(corpus.__all__) == {
         "Outcome",
@@ -311,7 +311,7 @@ def test_package_exports_the_public_surface():
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.corpus import CorpusRecord, record_id
+from sdkfit.corpus import CorpusRecord, record_id
 
 change = {"path": "app.py", "kind": "signature"}
 proposal = {"summary": "one edit", "diff": "--- a/app.py\\n+++ b/app.py\\n"}

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tenon.probe.tasks import Expectation, Task, load_tasks
+from sdkfit.probe.tasks import Expectation, Task, load_tasks
 
 TASKS = Path(__file__).parent.parent / "fixtures" / "mcp" / "probe_tasks.json"
 

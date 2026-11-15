@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, locate
-from tenon.propose import propose
-from tenon.prove import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.propose import propose
+from sdkfit.prove import (
     CopyError,
     ProofCause,
     apply_diff,
@@ -81,7 +81,7 @@ def test_copy_tree_keeps_env_but_drops_github(tmp_path):
 
     copy_tree(root, dest)
 
-    assert (dest / ".env").read_text(encoding="utf-8") == "TENON_FIXTURE=1\n"
+    assert (dest / ".env").read_text(encoding="utf-8") == "SDKFIT_FIXTURE=1\n"
     assert (dest / ".gitignore").is_file()
     assert not (dest / ".github").exists()
 
@@ -127,7 +127,7 @@ def test_isolated_copy_of_a_missing_root_raises_copy_error(tmp_path, monkeypatch
 
     assert caught.value.cause is ProofCause.COPY_FAILED
     assert "missing" in str(caught.value)
-    assert list(tmp_path.glob("tenon-prove-*")) == []
+    assert list(tmp_path.glob("sdkfit-prove-*")) == []
 
 
 def test_copying_a_file_as_the_root_raises_copy_error(tmp_path):
@@ -200,7 +200,7 @@ def test_an_empty_diff_returns_true_without_running_git(tmp_path, monkeypatch):
     def unexpected(*args, **kwargs):
         raise AssertionError("empty diff must not run git")
 
-    monkeypatch.setattr("tenon.prove.copy.subprocess.run", unexpected)
+    monkeypatch.setattr("sdkfit.prove.copy.subprocess.run", unexpected)
 
     assert apply_diff(copy, "") is True
     assert (copy / "acme/billing.py").read_text(encoding="utf-8") == before
@@ -211,7 +211,7 @@ def test_apply_diff_returns_false_when_git_is_missing(tmp_path, monkeypatch):
     def missing(*args, **kwargs):
         raise FileNotFoundError("git")
 
-    monkeypatch.setattr("tenon.prove.copy.subprocess.run", missing)
+    monkeypatch.setattr("sdkfit.prove.copy.subprocess.run", missing)
 
     assert apply_diff(tmp_path, "diff\n") is False
 
@@ -221,7 +221,7 @@ def test_apply_diff_returns_false_when_git_cannot_start(tmp_path, monkeypatch):
     def denied(*args, **kwargs):
         raise PermissionError("git")
 
-    monkeypatch.setattr("tenon.prove.copy.subprocess.run", denied)
+    monkeypatch.setattr("sdkfit.prove.copy.subprocess.run", denied)
 
     assert apply_diff(tmp_path, "diff\n") is False
 

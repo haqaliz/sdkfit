@@ -40,7 +40,7 @@ def test_runtime_has_git_ca_a_non_root_user_and_owned_data():
     assert "git" in stage
     assert "ca-certificates" in stage
     assert "10001" in stage
-    assert "USER tenon" in stage
+    assert "USER sdkfit" in stage
     assert "/data" in stage and "chown" in stage
     assert "PYTHONDONTWRITEBYTECODE=1" in stage
     assert "/app/.venv/bin" in stage
@@ -49,9 +49,9 @@ def test_runtime_has_git_ca_a_non_root_user_and_owned_data():
 # Spec AC1: the image runs the serve command and checks /health itself.
 def test_image_starts_the_service_and_checks_health():
     text = read("Dockerfile")
-    assert 'ENTRYPOINT ["tenon"]' in text
+    assert 'ENTRYPOINT ["sdkfit"]' in text
     cmd = next(line for line in text.splitlines() if line.startswith("CMD "))
-    for part in ("provider", "serve", "/data/bundles", "/data/tenon.db", "0.0.0.0", "8080"):
+    for part in ("provider", "serve", "/data/bundles", "/data/sdkfit.db", "0.0.0.0", "8080"):
         assert part in cmd
     assert "EXPOSE 8080" in text
     check = text[text.index("HEALTHCHECK") :]
@@ -61,7 +61,7 @@ def test_image_starts_the_service_and_checks_health():
 # Spec AC1: no bearer token or other secret is baked into a layer.
 def test_dockerfile_carries_no_secret():
     text = read("Dockerfile")
-    assert "TENON_API_TOKEN" not in text
+    assert "SDKFIT_API_TOKEN" not in text
     assert not re.search(r"(?i)(api[_-]?token|webhook[_-]?secret|private[_-]?key)\s*=", text)
 
 
@@ -78,7 +78,7 @@ def test_compose_runs_the_service_behind_caddy():
     assert any("Caddyfile" in mount for mount in caddy["volumes"])
     assert any(mount.startswith("caddy-data:") for mount in caddy["volumes"])
     assert any(mount.startswith("caddy-config:") for mount in caddy["volumes"])
-    assert "TENON_DOMAIN" in caddy["environment"]
+    assert "SDKFIT_DOMAIN" in caddy["environment"]
     assert "service" in caddy["depends_on"]
     assert caddy["restart"]
 
@@ -89,8 +89,8 @@ def test_service_reads_its_config_and_mounts_inputs_read_only():
     assert service["build"] == "."
     assert service["env_file"] == ".env"
     environment = service["environment"]
-    assert ":?" in environment["TENON_API_TOKEN"]
-    assert ":-" in environment["TENON_WEBHOOK_SECRET"]
+    assert ":?" in environment["SDKFIT_API_TOKEN"]
+    assert ":-" in environment["SDKFIT_WEBHOOK_SECRET"]
     for key in (
         "GIT_AUTHOR_NAME",
         "GIT_AUTHOR_EMAIL",
@@ -99,7 +99,7 @@ def test_service_reads_its_config_and_mounts_inputs_read_only():
     ):
         assert environment[key]
     volumes = service["volumes"]
-    assert "tenon-data:/data" in volumes
+    assert "sdkfit-data:/data" in volumes
     assert "./bundles:/data/bundles:ro" in volumes
     assert "./secrets:/secrets:ro" in volumes
     assert "/tmp" in service["tmpfs"]
@@ -120,13 +120,13 @@ def test_service_is_hardened_and_has_no_host_port():
 # Spec AC2: state lives in named volumes, not in the image or a bind mount.
 def test_compose_declares_the_named_volumes():
     volumes = compose()["volumes"]
-    assert set(volumes) == {"tenon-data", "caddy-data", "caddy-config"}
+    assert set(volumes) == {"sdkfit-data", "caddy-data", "caddy-config"}
 
 
 # Spec AC3: Caddy reads the domain, compresses and reverse-proxies the service.
 def test_caddyfile_terminates_tls_and_proxies_the_service():
     text = read("Caddyfile")
-    assert "{$TENON_DOMAIN:localhost}" in text
+    assert "{$SDKFIT_DOMAIN:localhost}" in text
     assert "encode zstd gzip" in text
     assert "reverse_proxy service:8080" in text
 
@@ -159,20 +159,20 @@ def test_env_example_lists_the_operator_keys():
         if line.strip() and not line.startswith("#")
     }
     for key in (
-        "TENON_API_TOKEN",
-        "TENON_DOMAIN",
-        "TENON_WEBHOOK_SECRET",
-        "TENON_GITHUB_APP_ID",
-        "TENON_GITHUB_APP_INSTALLATION_ID",
-        "TENON_GITHUB_APP_PRIVATE_KEY",
-        "TENON_GITHUB_API_URL",
+        "SDKFIT_API_TOKEN",
+        "SDKFIT_DOMAIN",
+        "SDKFIT_WEBHOOK_SECRET",
+        "SDKFIT_GITHUB_APP_ID",
+        "SDKFIT_GITHUB_APP_INSTALLATION_ID",
+        "SDKFIT_GITHUB_APP_PRIVATE_KEY",
+        "SDKFIT_GITHUB_API_URL",
         "GIT_AUTHOR_NAME",
         "GIT_AUTHOR_EMAIL",
         "GIT_COMMITTER_NAME",
         "GIT_COMMITTER_EMAIL",
     ):
         assert key in keys
-    assert "TENON_GITHUB_APP_PRIVATE_KEY=/secrets/app.pem" in read(".env.example")
+    assert "SDKFIT_GITHUB_APP_PRIVATE_KEY=/secrets/app.pem" in read(".env.example")
     assert not re.search(r"(?m)=\s*[0-9a-f]{32,}\s*$", read(".env.example"))
 
 

@@ -1,4 +1,4 @@
-# Tenon examples
+# SDK Fit examples
 
 The quickstart runs the shipped pipeline against the committed, read-only fixture
 `tests/fixtures/repos/proof-basic`. It locates the `amount` keyword in
@@ -12,7 +12,7 @@ From the repository root:
 
 ```sh
 # 1. Locate the affected sites (exit 1 when sites are found).
-uv run tenon check tests/fixtures/repos/proof-basic \
+uv run sdkfit check tests/fixtures/repos/proof-basic \
   --old examples/quickstart/old.yaml \
   --new examples/quickstart/new.yaml \
   --language python --sdk-package acme.client
@@ -23,7 +23,7 @@ Expected: `renamed #/components/schemas/Charge/properties: amount -> amount_cent
 
 ```sh
 # 2. Propose the diff and prove it (no checkout write, no PR).
-uv run tenon fix tests/fixtures/repos/proof-basic \
+uv run sdkfit fix tests/fixtures/repos/proof-basic \
   --old examples/quickstart/old.yaml \
   --new examples/quickstart/new.yaml \
   --language python --sdk-package acme.client \
@@ -34,7 +34,7 @@ Expected: the one-line diff `amount=amount` -> `amount_cents=amount`, `Proof: TE
 
 ```sh
 # 3. The same run as a provider bundle (dry run: no --open-pr).
-uv run tenon provider migrate tests/fixtures/repos/proof-basic \
+uv run sdkfit provider migrate tests/fixtures/repos/proof-basic \
   --bundle examples/quickstart/bundle.json
 ```
 

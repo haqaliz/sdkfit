@@ -2,13 +2,13 @@
 
 from pathlib import Path
 
-from tenon.locate import SiteShape
-from tenon.locate.mcp_scan import (
+from sdkfit.locate import SiteShape
+from sdkfit.locate.mcp_scan import (
     McpDynamic,
     McpHit,
     scan_mcp,
 )
-from tenon.locate.scan import DynamicKind
+from sdkfit.locate.scan import DynamicKind
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "repos"
 MCP_BASIC = FIXTURES / "mcp-basic"

@@ -1,7 +1,7 @@
 # FAQ
 
-**Is Tenon a SaaS?**
-No. It is a CLI and a self-hosted service. There is no Tenon account, hosted dashboard or data
+**Is SDK Fit a SaaS?**
+No. It is a CLI and a self-hosted service. There is no SDK Fit account, hosted dashboard or data
 store in the cloud.
 
 **Does it push to my repository?**
@@ -20,7 +20,7 @@ diffs. A change with no machine-readable contract is not covered.
 No. Detection, location, patching and proof are deterministic and offline.
 
 **What does it cost?**
-Tenon is Apache-2.0 and free. You pay for your own compute, GitHub usage and any database you run.
+SDK Fit is Apache-2.0 and free. You pay for your own compute, GitHub usage and any database you run.
 
 **How do I self-host it?**
 Docker Compose with SQLite (`DEPLOYMENT.md`), or Kubernetes with Postgres and the manifests in
@@ -28,7 +28,7 @@ Docker Compose with SQLite (`DEPLOYMENT.md`), or Kubernetes with Postgres and th
 
 **What happens when it cannot prove a fix?**
 The site stays in a separate ambiguity/unverified list and no patch is claimed for it. You can raise
-the required proof level or fix it by hand; Tenon does not guess.
+the required proof level or fix it by hand; SDK Fit does not guess.
 
 **Does it open PRs for every affected repo?**
 The installed fan-out can, over the repositories an installation grants. It is sequential, reports

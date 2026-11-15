@@ -5,12 +5,12 @@ UI, votes or customer logos. Recommended size: **1270×760** (gallery), **240×2
 
 ## 1. Thumbnail
 
-- **Caption:** Tenon — breaking API changes, fixed and proven.
-- **Screen:** a dark terminal crop showing the `tenon fix` diff and `Proof: TESTS_PASSED`, with the
+- **Caption:** SDK Fit — breaking API changes, fixed and proven.
+- **Screen:** a dark terminal crop showing the `sdkfit fix` diff and `Proof: TESTS_PASSED`, with the
   product name set in the corner. No stock art.
 - **Why:** the proof line is the differentiator; it must be readable at 240 px.
 
-## 2. `tenon check` — the affected site
+## 2. `sdkfit check` — the affected site
 
 - **Caption:** Find the call sites a breaking change breaks.
 - **Screen:** the exact block from [`DEMO.md`](DEMO.md):
@@ -25,10 +25,10 @@ UI, votes or customer logos. Recommended size: **1270×760** (gallery), **240×2
 - **Capture:** a 120×30 terminal, dark theme, font large enough to read at half width; crop to the
   command and these lines; no secrets or local paths.
 
-## 3. `tenon fix` — the proof
+## 3. `sdkfit fix` — the proof
 
 - **Caption:** Rewrite only what it can prove.
-- **Screen:** the `tenon fix` block: the one-line diff (`amount=` → `amount_cents=`) plus
+- **Screen:** the `sdkfit fix` block: the one-line diff (`amount=` → `amount_cents=`) plus
   `Proof: TESTS_PASSED`, `Baseline exit: 0`, `After exit: 0`.
 - **Why:** shows the change is small, reviewed and checked by the user's own command.
 

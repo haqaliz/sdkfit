@@ -1,7 +1,7 @@
 """The public Rust locate API over temp ``.rs`` repositories."""
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     LocateReason,
     RustLocateConfig,
@@ -295,7 +295,7 @@ def test_a_repository_without_the_crate_has_no_sdk_import(tmp_path):
 
 # Spec AC1/M3: the Rust config and wrapper are part of the public surface.
 def test_the_rust_api_is_exported():
-    import tenon.locate as locate
+    import sdkfit.locate as locate
 
     assert locate.RustLocateConfig is RustLocateConfig
     assert locate.locate_rust is locate_rust

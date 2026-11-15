@@ -1,6 +1,6 @@
 # Deploying the service
 
-`tenon provider serve` ships as a small Docker image behind Caddy: the service talks HTTP on the
+`sdkfit provider serve` ships as a small Docker image behind Caddy: the service talks HTTP on the
 private compose network, Caddy terminates TLS on 80/443, and only the database volume is writable.
 This guide is for a single VM. For the local MVP behavior see the README; T13b adds parallel
 workers, bounded retries, cancel and Prometheus metrics. For Kubernetes, a shared Postgres queue and
@@ -19,14 +19,14 @@ horizontal scaling see `CLOUD.md`.
 Generate the API token and the optional webhook secret:
 
 ```sh
-openssl rand -hex 32   # TENON_API_TOKEN
-openssl rand -hex 32   # TENON_WEBHOOK_SECRET (optional)
+openssl rand -hex 32   # SDKFIT_API_TOKEN
+openssl rand -hex 32   # SDKFIT_WEBHOOK_SECRET (optional)
 cp .env.example .env
 chmod 600 .env
 ```
 
-Fill `.env`: the token, `TENON_DOMAIN`, the app id/installation id, and the key **path**
-(`TENON_GITHUB_APP_PRIVATE_KEY=/secrets/app.pem`; the contents never go in `.env`).
+Fill `.env`: the token, `SDKFIT_DOMAIN`, the app id/installation id, and the key **path**
+(`SDKFIT_GITHUB_APP_PRIVATE_KEY=/secrets/app.pem`; the contents never go in `.env`).
 
 Mount the key as a file and restrict it to the service uid (10001), because the bind mount is
 read-only but still permission-checked:
@@ -46,8 +46,8 @@ Put migration bundles and the specs they reference under `bundles/`; the directo
 read-only at `/data/bundles` (see `bundles/README.md` for the layout). Queue a run with:
 
 ```sh
-curl -H "Authorization: Bearer $TENON_API_TOKEN" \
-     -d '{"bundle": "stripe-v2500-v2596.json"}' https://$TENON_DOMAIN/runs
+curl -H "Authorization: Bearer $SDKFIT_API_TOKEN" \
+     -d '{"bundle": "stripe-v2500-v2596.json"}' https://$SDKFIT_DOMAIN/runs
 ```
 
 ## Start the stack
@@ -74,7 +74,7 @@ services:
       - --bundles
       - /data/bundles
       - --db
-      - /data/tenon.db
+      - /data/sdkfit.db
       - --host
       - 0.0.0.0
       - --port
@@ -97,8 +97,8 @@ with no report (timeout, exit 2, exception, invalid report) is re-queued up to N
 Cancel a queued or running run:
 
 ```sh
-curl -X POST -H "Authorization: Bearer $TENON_API_TOKEN" \
-     https://$TENON_DOMAIN/runs/$RUN_ID/cancel
+curl -X POST -H "Authorization: Bearer $SDKFIT_API_TOKEN" \
+     https://$SDKFIT_DOMAIN/runs/$RUN_ID/cancel
 ```
 
 A queued run returns 202 with `"status":"cancelled"`; a running run returns 202 with
@@ -115,7 +115,7 @@ is not a target.
 ## Webhook triggers
 
 Map a verified GitHub event (and optional action) to a registered bundle with `--trigger`; add it to
-the compose `command:` (the webhook secret comes from `TENON_WEBHOOK_SECRET` in `.env`):
+the compose `command:` (the webhook secret comes from `SDKFIT_WEBHOOK_SECRET` in `.env`):
 
 ```yaml
 services:
@@ -126,7 +126,7 @@ services:
       - --bundles
       - /data/bundles
       - --db
-      - /data/tenon.db
+      - /data/sdkfit.db
       - --host
       - 0.0.0.0
       - --port
@@ -142,7 +142,7 @@ an actionless `event`. On a match the service queues a normal installed-fan-out 
 `webhook:<X-GitHub-Delivery>` as its idempotency key and answers 202 with the run id/status/bundle; a
 non-match records the event only. A duplicate delivery returns the same run, so a GitHub retry never
 queues twice. The bundle must be a `.json` file confined to `--bundles`; a trigger without
-`TENON_WEBHOOK_SECRET`/`--webhook-secret` is a usage error, and a bundle deleted after startup
+`SDKFIT_WEBHOOK_SECRET`/`--webhook-secret` is a usage error, and a bundle deleted after startup
 queues a run that fails with the normal missing-bundle error.
 
 The mapping is operator CLI config, never bundle content: a bundle cannot auto-run itself. There is
@@ -151,18 +151,18 @@ action (for example `installation_repositories.added`) rather than a noisy event
 
 ## Metrics
 
-`GET /metrics` is bearer-guarded and returns Prometheus text: `tenon_runs{status=...}` for
-`queued`, `running`, `succeeded`, `failed` and `cancelled`, plus `tenon_workers`. Caddy already
+`GET /metrics` is bearer-guarded and returns Prometheus text: `sdkfit_runs{status=...}` for
+`queued`, `running`, `succeeded`, `failed` and `cancelled`, plus `sdkfit_workers`. Caddy already
 proxies the route, so an external Prometheus scrapes the public TLS name and sends the API token:
 
 ```yaml
 scrape_configs:
-  - job_name: tenon
+  - job_name: sdkfit
     scheme: https
     authorization:
-      credentials_file: /etc/prometheus/tenon-token
+      credentials_file: /etc/prometheus/sdkfit-token
     static_configs:
-      - targets: ["$TENON_DOMAIN"]
+      - targets: ["$SDKFIT_DOMAIN"]
 ```
 
 The credentials file holds only the token and must be readable by Prometheus alone. The token is
@@ -170,11 +170,11 @@ compared per request and never stored by the service.
 
 ## DNS and TLS
 
-With a real `TENON_DOMAIN` and ports 80/443 open, Caddy obtains and renews a Let's Encrypt
+With a real `SDKFIT_DOMAIN` and ports 80/443 open, Caddy obtains and renews a Let's Encrypt
 certificate automatically; no certificate files are configured by hand. The firewall should allow
 only 80/tcp and 443/tcp (plus 443/udp for HTTP/3) to the host.
 
-For `TENON_DOMAIN=localhost` Caddy uses its **internal CA**, which clients do not trust by default.
+For `SDKFIT_DOMAIN=localhost` Caddy uses its **internal CA**, which clients do not trust by default.
 Trust it explicitly for local testing:
 
 ```sh
@@ -186,27 +186,27 @@ Do not use the internal CA for a public deployment.
 
 ## Backups and restore
 
-The database lives in the `tenon-data` volume. A naive copy of a live SQLite file can be
+The database lives in the `sdkfit-data` volume. A naive copy of a live SQLite file can be
 inconsistent, so stop the service (or checkpoint) and use SQLite's online backup:
 
 ```sh
 docker compose stop service
-volume=$(docker volume inspect --format '{{ .Mountpoint }}' "$(basename "$PWD")_tenon-data")
-sqlite3 "$volume/tenon.db" ".backup '/var/backups/tenon-$(date +%F).db'"
+volume=$(docker volume inspect --format '{{ .Mountpoint }}' "$(basename "$PWD")_sdkfit-data")
+sqlite3 "$volume/sdkfit.db" ".backup '/var/backups/sdkfit-$(date +%F).db'"
 docker compose start service
 ```
 
 Back up `bundles/` and `.env` separately (they are host files), and copy the backup off the host.
 
-To restore: `docker compose stop service`, copy the backup over `tenon.db` in the same volume (or
-restore with `sqlite3 "$volume/tenon.db" ".restore '<backup>'"`), then `docker compose start
+To restore: `docker compose stop service`, copy the backup over `sdkfit.db` in the same volume (or
+restore with `sqlite3 "$volume/sdkfit.db" ".restore '<backup>'"`), then `docker compose start
 service`. Keep the app key and `.env` with the backup set or the service cannot use the restored
 history.
 
 ## Rotating the token and webhook secret
 
 1. Generate a new value with `openssl rand -hex 32`.
-2. Update `TENON_API_TOKEN` (or `TENON_WEBHOOK_SECRET`) in `.env`.
+2. Update `SDKFIT_API_TOKEN` (or `SDKFIT_WEBHOOK_SECRET`) in `.env`.
 3. `docker compose up -d` recreates the service with the new environment.
 4. Update API clients, and the webhook secret in the GitHub App settings.
 
@@ -240,10 +240,10 @@ The service logs to stdout/stderr; the token, webhook secret and key contents ar
 
 ## Security checklist
 
-- [ ] TLS only: clients use `https://$TENON_DOMAIN`; port 80 is Caddy's redirect, never the service.
-- [ ] A long random `TENON_API_TOKEN` (`openssl rand -hex 32`), rotated on suspicion.
-- [ ] `TENON_WEBHOOK_SECRET` set if the webhook route is used.
-- [ ] The service runs as `tenon` (uid 10001), root filesystem read-only, `/tmp` tmpfs, all caps
+- [ ] TLS only: clients use `https://$SDKFIT_DOMAIN`; port 80 is Caddy's redirect, never the service.
+- [ ] A long random `SDKFIT_API_TOKEN` (`openssl rand -hex 32`), rotated on suspicion.
+- [ ] `SDKFIT_WEBHOOK_SECRET` set if the webhook route is used.
+- [ ] The service runs as `sdkfit` (uid 10001), root filesystem read-only, `/tmp` tmpfs, all caps
       dropped, `no-new-privileges`.
 - [ ] No host port on the service; only Caddy publishes 80/443.
 - [ ] `secrets/app.pem` is 0400, owned by 10001, mounted read-only; `.env` is 0600 and uncommitted.

@@ -1,6 +1,6 @@
 import pytest
 
-from tenon.provider.repos import load_repos
+from sdkfit.provider.repos import load_repos
 
 
 def a_repos(tmp_path, text):
@@ -125,7 +125,7 @@ def test_nonexistent_listed_path_is_returned(tmp_path):
 
 # Spec: the package surface exports the repos loader.
 def test_package_exports_the_repos_loader(tmp_path):
-    from tenon.provider import load_repos as exported
+    from sdkfit.provider import load_repos as exported
 
     path = a_repos(tmp_path, "checkout\n")
 

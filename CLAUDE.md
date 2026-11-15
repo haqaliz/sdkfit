@@ -1,4 +1,4 @@
-# Tenon: Project Context for Claude Code
+# SDK Fit: Project Context for Claude Code
 
 This file orients a coding agent working in this repository. Read it first. Deeper context
 lives in the `docs/` folder.
@@ -7,36 +7,37 @@ lives in the `docs/` folder.
 
 ## What this project is
 
-**Tenon** keeps your code fitted to the APIs it depends on. When a vendor ships a breaking
-change (a renamed field, a removed endpoint, a new required parameter), Tenon finds the affected
+**SDK Fit** keeps your code fitted to the APIs it depends on. When a vendor ships a breaking
+change (a renamed field, a removed endpoint, a new required parameter), SDK Fit finds the affected
 calls in your repository, proposes the fix as a pull request, and **proves the fix against your
 own checks** before it asks you to merge. A second mode checks whether an API or MCP server is
 usable by AI agents, by running an agent against it.
 
-The name: a *tenon* is the tongue cut on a timber to fit its mortise exactly. The joint holds
-only if the two sides still match. Tenon asks of an integration: *does your side still fit theirs?*
+The name is literal: when an API changes, the consumer side has to fit the new shape. SDK Fit
+finds the calls that no longer fit, patches the ones it can prove, and leaves the rest unrooted
+rather than guessing.
 
-Status: **T1, T2, T3, T4, T5, T6, T7, T8a, T8b, T8c, T9, T10a, T10b, T10c, T10d, T10e, T10f, T11a, T11b, T11c, T12a, T12b, T12c, T12d, T12e, T13a, T13b, T14, T15, T16 and M1.4 shipped.**
+Status: **T1, T2, T3, T4, T5, T6, T7, T8a, T8b, T8c, T9, T10a, T10b, T10c, T10d, T10e, T10f, T11a, T11b, T11c, T12a, T12b, T12c, T12d, T12e, T13a, T13b, T14, T15, T16, T17 and M1.4 shipped.**
 **v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15; v0.4.0 released 2026-11-16**
 — see `CHANGELOG.md` and `docs/RELEASE.md`.
-`src/tenon/detect/` turns two OpenAPI 3.x documents — and, for T8a, two MCP `tools/list` documents —
-into typed `Change` records; `src/tenon/locate/` turns a record into call sites with file, line and
+`src/sdkfit/detect/` turns two OpenAPI 3.x documents — and, for T8a, two MCP `tools/list` documents —
+into typed `Change` records; `src/sdkfit/locate/` turns a record into call sites with file, line and
 column, keeping anything unprovable in named ambiguity groups — Python via `ast`,
 TypeScript/JavaScript via tree-sitter, and MCP `call_tool` sites via `locate_mcp`, no Node analysis
-runtime; `src/tenon/propose/` turns certain sites into a candidate diff and never applies it;
-`src/tenon/prove/` applies that diff to a copy, runs every configured proof stage before and after,
+runtime; `src/sdkfit/propose/` turns certain sites into a candidate diff and never applies it;
+`src/sdkfit/prove/` applies that diff to a copy, runs every configured proof stage before and after,
 and records the strongest level that actually passed (`TESTS_PASSED`, `CHARACTERIZED`, `REPLAYED`,
-`TYPES_BUILD_ONLY`) or `UNVERIFIED` with a stage-specific cause; `src/tenon/pr/` renders a
+`TYPES_BUILD_ONLY`) or `UNVERIFIED` with a stage-specific cause; `src/sdkfit/pr/` renders a
 deterministic PR whose title and body state that level, then clones a clean checkout, commits the
 exact diff to a new branch and opens the PR through the user's own `git` and `gh` or a GitHub App
-installation (`--remote app`); `src/tenon/cli/` exposes `tenon check`, `tenon fix`,
-`tenon provider migrate`, `tenon probe` and `tenon corpus` with `--language python|ts`,
+installation (`--remote app`); `src/sdkfit/cli/` exposes `sdkfit check`, `sdkfit fix`,
+`sdkfit provider migrate`, `sdkfit probe` and `sdkfit corpus` with `--language python|ts`,
 `--source openapi|mcp`, `--build`/`--characterize`/`--replay`/`--check`, the five-level `--require`,
-text or byte-stable JSON, honest exit codes, `tenon.toml` config, and `fix --open-pr` delegating to
-T5 with the required level and a draft gate; `src/tenon/provider/` loads a portable migration bundle
-and runs the same pipeline for one target repo; `src/tenon/probe/` connects to an MCP server over
+text or byte-stable JSON, honest exit codes, `sdkfit.toml` config, and `fix --open-pr` delegating to
+T5 with the required level and a draft gate; `src/sdkfit/provider/` loads a portable migration bundle
+and runs the same pipeline for one target repo; `src/sdkfit/probe/` connects to an MCP server over
 stdio, runs probe tasks through a user-supplied agent and reports what worked, with no model or
-network; `src/tenon/corpus/` records `(change, patch, proof, outcome)` runs and reports by
+network; `src/sdkfit/corpus/` records `(change, patch, proof, outcome)` runs and reports by
 level/outcome, with a merge rate only where real outcomes exist (`docs/benchmark/`). `fix` never
 writes the checkout; the PR writer refuses a dirty tree, the default branch, an existing branch, a
 failed remote check, and a proof below the required level unless the user opts into a draft; it has
@@ -48,10 +49,10 @@ keyword attribution). Phase 2 is complete; Phase 3's T10a (GitHub App remote), T
 migration bundle), T10c (local provider fan-out), T10d (installed provider fan-out), T10e (hosted
 service MVP), T10f (webhook-triggered runs), T11a (Rust locator), T11b (Go locator) and T11c (C#
 locator) shipped, T12a/T12b/T12c/T12d/T12e (receiver tracking) shipped, T13a (deployable service),
-T13b (resilience), T14 (CI/release), T15 (Postgres store + Kubernetes) and T16 (launch readiness)
-shipped, while repo-wide cross-package receiver indexes are not started — do not describe capability
-that isn't there yet. **The launch name is unresolved: `tenonhq` collides with tenonhq.com; see
-`docs/launch/NAME_CHECK.md`.**
+T13b (resilience), T14 (CI/release), T15 (Postgres store + Kubernetes), T16 (launch readiness) and
+T17 (rename to SDK Fit) shipped, while repo-wide cross-package receiver indexes are not started — do
+not describe capability that isn't there yet. The launch name is resolved: `sdkfit`; see
+`docs/launch/NAME_CHECK.md`.
 
 Lineage: one of three siblings scaffolded together on 2026-10-22 (with Assay and Pry) from a
 market-demand pass (`~/dev/at/ideas/market-demand-2026-10.md`). It answers the YC Fall 2026
@@ -85,7 +86,7 @@ request "Self-Maintaining APIs". Standalone: no code dependency on Belay or Plum
 4. **No code egress by default.** Repository code is analyzed locally. Any model assist is BYOK or
    local, opt-in, and disclosed. Never send a customer's code to a service the user did not
    authorize.
-5. **Never touch the default branch.** Tenon opens a branch and a PR. It never pushes to `master`
+5. **Never touch the default branch.** SDK Fit opens a branch and a PR. It never pushes to `master`
    and never merges.
 6. **Build the part that improves as models improve.** A better model proposes better patches; the
    proof step stays the arbiter.
@@ -98,7 +99,7 @@ request "Self-Maintaining APIs". Standalone: no code dependency on Belay or Plum
 | Level | Meaning | When it may be used |
 |---|---|---|
 | **TESTS_PASSED** | The repo's own tests pass after the patch (and failed or were affected before) | Tests exist and exercise the changed call sites |
-| **CHARACTERIZED** | Your characterization command passes before and after | You supplied the command and opted in; Tenon does not generate it |
+| **CHARACTERIZED** | Your characterization command passes before and after | You supplied the command and opted in; SDK Fit does not generate it |
 | **REPLAYED** | Your recorded-call replay passes before and after | You supplied the recording |
 | **TYPES_BUILD_ONLY** | Type-check and build pass, nothing more | No tests; labelled as weak |
 | **UNVERIFIED** | No acceptable proof ran | Default when nothing the user required could run |
@@ -112,7 +113,7 @@ The PR title and body state the level. A required level the run could not reach 
 
 ## Tech direction
 
-- **Python core** (via `uv`), CLI-first (`tenon`), self-hostable OSS; a GitHub App and hosted
+- **Python core** (via `uv`), CLI-first (`sdkfit`), self-hostable OSS; a GitHub App and hosted
   layer come later. Details in `docs/technical/ARCHITECTURE.md`. A TypeScript component may be
   needed for TS/JS analysis; decide when that capability is planned, not before.
 - Language targets in order: Python, TypeScript/JavaScript, then Go, Rust, C# as demand shows.

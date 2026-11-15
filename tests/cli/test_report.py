@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from tenon.cli.report import (
+from sdkfit.cli.report import (
     _LEVEL_RANK,
     FixResult,
     check_exit,
@@ -19,8 +19,8 @@ from tenon.cli.report import (
     render_fix_json,
     render_fix_text,
 )
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     AmbiguousGroup,
     LocateReason,
@@ -28,8 +28,8 @@ from tenon.locate import (
     Site,
     SiteShape,
 )
-from tenon.propose import Edit, Proposal, ProposalReason, SkipReason, Skipped
-from tenon.prove import (
+from sdkfit.propose import Edit, Proposal, ProposalReason, SkipReason, Skipped
+from sdkfit.prove import (
     PROOF_RANK,
     CheckResult,
     ProofCause,
@@ -38,7 +38,7 @@ from tenon.prove import (
     ProofStage,
     proof_rank,
 )
-from tenon.pr import PrDraft, PrRefusal, PrResult, PrStatus
+from sdkfit.pr import PrDraft, PrRefusal, PrResult, PrStatus
 
 POINTER = "#/components/schemas/Charge/properties"
 COMMAND = ("python", "-m", "pytest", "-q")
@@ -206,10 +206,10 @@ def a_two_stage_proof(*, test_after=0, cause=None):
 
 def a_draft(**overrides):
     values = {
-        "title": "[TESTS_PASSED] tenon: renamed",
+        "title": "[TESTS_PASSED] sdkfit: renamed",
         "body": "body",
-        "branch": "tenon/renamed-1234abcd",
-        "commit_message": "tenon: renamed",
+        "branch": "sdkfit/renamed-1234abcd",
+        "commit_message": "sdkfit: renamed",
     }
     values.update(overrides)
     return PrDraft(**values)
@@ -917,7 +917,7 @@ def test_error_json_keeps_code_and_pointer_null():
 
 # Spec AC7: text mode is one stderr-ready line.
 def test_error_text_is_one_line():
-    assert render_error("usage", "bad input") == "tenon: usage: bad input\n"
+    assert render_error("usage", "bad input") == "sdkfit: usage: bad input\n"
 
 
 # Spec AC7: the code and pointer are named when present.
@@ -926,15 +926,15 @@ def test_error_text_is_one_line():
     [
         (
             {"code": "NOT_A_SPEC"},
-            "tenon: spec: NOT_A_SPEC: not a spec\n",
+            "sdkfit: spec: NOT_A_SPEC: not a spec\n",
         ),
         (
             {"pointer": "#/components/schemas/Charge"},
-            "tenon: spec: at #/components/schemas/Charge: not a spec\n",
+            "sdkfit: spec: at #/components/schemas/Charge: not a spec\n",
         ),
         (
             {"code": "NOT_A_SPEC", "pointer": "#/components/schemas/Charge"},
-            "tenon: spec: NOT_A_SPEC at #/components/schemas/Charge: not a spec\n",
+            "sdkfit: spec: NOT_A_SPEC at #/components/schemas/Charge: not a spec\n",
         ),
     ],
 )
@@ -965,18 +965,18 @@ def test_renderers_are_deterministic_for_the_same_inputs():
 
 
 DETERMINISM_SCRIPT = """
-from tenon.cli.report import (
+from sdkfit.cli.report import (
     FixResult,
     render_check_json,
     render_check_text,
     render_fix_json,
     render_fix_text,
 )
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateResult, Site, SiteShape
-from tenon.propose import Edit, Proposal
-from tenon.prove import CheckResult, ProofLevel, ProofResult
-from tenon.pr import PrDraft, PrResult, PrStatus
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateResult, Site, SiteShape
+from sdkfit.propose import Edit, Proposal
+from sdkfit.prove import CheckResult, ProofLevel, ProofResult
+from sdkfit.pr import PrDraft, PrResult, PrStatus
 
 change = Change(
     kind=ChangeKind.RENAMED,
@@ -1028,10 +1028,10 @@ proof = ProofResult(
     patch_applied=True,
 )
 draft = PrDraft(
-    title="[TESTS_PASSED] tenon: renamed",
+    title="[TESTS_PASSED] sdkfit: renamed",
     body="body",
-    branch="tenon/renamed-1234abcd",
-    commit_message="tenon: renamed",
+    branch="sdkfit/renamed-1234abcd",
+    commit_message="sdkfit: renamed",
 )
 pr = PrResult(
     status=PrStatus.OPENED,
@@ -1098,8 +1098,8 @@ def test_reports_have_no_environment_leaks():
 
 
 # Plan file 3: the report surface is re-exported from the package.
-def test_report_surface_is_exported_from_tenon_cli():
-    import tenon.cli as cli
+def test_report_surface_is_exported_from_sdkfit_cli():
+    import sdkfit.cli as cli
 
     names = {
         "FixResult",

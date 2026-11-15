@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-import tenon.locate.resolve as resolve_module
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+import sdkfit.locate.resolve as resolve_module
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     LocateConfig,
     LocateReason,
@@ -338,8 +338,8 @@ def test_two_runs_produce_identical_json():
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, locate
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, locate
 
 change = Change(
     kind=ChangeKind.RENAMED,

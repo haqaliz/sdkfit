@@ -5,8 +5,8 @@ import sqlite3
 
 import pytest
 
-from tenon.service.api import Api, Response, resolve_bundle
-from tenon.service.store import RunStore
+from sdkfit.service.api import Api, Response, resolve_bundle
+from sdkfit.service.store import RunStore
 
 TOKEN = "test-api-token"
 SECRET = "test-webhook-secret"
@@ -628,8 +628,8 @@ def test_a_duplicate_triggered_delivery_is_one_run(tmp_path):
 
 # Spec AC5: a bundle deleted after startup queues; the worker fails it, not the webhook.
 def test_a_deleted_bundle_is_a_failed_run_not_a_webhook_error(tmp_path):
-    from tenon.cli.main import _serve_execute
-    from tenon.service.worker import Worker
+    from sdkfit.cli.main import _serve_execute
+    from sdkfit.service.worker import Worker
 
     api, store, root = an_api(
         tmp_path, secret=SECRET, triggers={("push", None): "bundle.json"}
@@ -840,12 +840,12 @@ def test_metrics_reports_all_statuses_and_workers(tmp_path):
         "text/plain; version=0.0.4; charset=utf-8"
     )
     assert response.body == (
-        b'tenon_runs{status="queued"} 1\n'
-        b'tenon_runs{status="running"} 1\n'
-        b'tenon_runs{status="succeeded"} 1\n'
-        b'tenon_runs{status="failed"} 1\n'
-        b'tenon_runs{status="cancelled"} 1\n'
-        b"tenon_workers 2\n"
+        b'sdkfit_runs{status="queued"} 1\n'
+        b'sdkfit_runs{status="running"} 1\n'
+        b'sdkfit_runs{status="succeeded"} 1\n'
+        b'sdkfit_runs{status="failed"} 1\n'
+        b'sdkfit_runs{status="cancelled"} 1\n'
+        b"sdkfit_workers 2\n"
     )
     assert store.get(running.id).status == "running"
 
@@ -857,12 +857,12 @@ def test_metrics_reports_zero_counts_and_the_default_worker(tmp_path):
     response = a_call(api, "GET", "/metrics")
 
     assert response.body == (
-        b'tenon_runs{status="queued"} 0\n'
-        b'tenon_runs{status="running"} 0\n'
-        b'tenon_runs{status="succeeded"} 0\n'
-        b'tenon_runs{status="failed"} 0\n'
-        b'tenon_runs{status="cancelled"} 0\n'
-        b"tenon_workers 1\n"
+        b'sdkfit_runs{status="queued"} 0\n'
+        b'sdkfit_runs{status="running"} 0\n'
+        b'sdkfit_runs{status="succeeded"} 0\n'
+        b'sdkfit_runs{status="failed"} 0\n'
+        b'sdkfit_runs{status="cancelled"} 0\n'
+        b"sdkfit_workers 1\n"
     )
 
 

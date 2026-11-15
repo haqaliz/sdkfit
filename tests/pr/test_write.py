@@ -10,12 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from tenon.pr import render_pr
-from tenon.pr.remote import GitGhRemote, RemoteError
-from tenon.pr.write import write_pr
-from tenon.propose import Edit, ProposalReason
-from tenon.pr.result import PrRefusal, PrStatus
-from tenon.prove import ProofCause, ProofLevel
+from sdkfit.pr import render_pr
+from sdkfit.pr.remote import GitGhRemote, RemoteError
+from sdkfit.pr.write import write_pr
+from sdkfit.propose import Edit, ProposalReason
+from sdkfit.pr.result import PrRefusal, PrStatus
+from sdkfit.prove import ProofCause, ProofLevel
 
 from .conftest import FakeRemote
 
@@ -63,7 +63,7 @@ def pr_tempdir(tmp_path, monkeypatch):
 
     yield
 
-    assert list(Path(tmp_path).glob("tenon-pr-*")) == []
+    assert list(Path(tmp_path).glob("sdkfit-pr-*")) == []
 
 
 @pytest.fixture(autouse=True)
@@ -71,7 +71,7 @@ def a_git_identity(tmp_path, monkeypatch):
     """A known identity for commits in the disposable clone."""
     config = tmp_path / "gitconfig"
     config.write_text(
-        "[user]\n\tname = Tenon Tests\n\temail = tenon@example.test\n",
+        "[user]\n\tname = SDK Fit Tests\n\temail = sdkfit@example.test\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
@@ -318,7 +318,7 @@ def test_a_successful_run_commits_exactly_the_proposal_files(
     assert result.url == remote.url
     assert tree_hashes(repo_with_remote.work) == before
     assert git(repo_with_remote.work, "status", "--porcelain") == ""
-    assert git(repo_with_remote.work, "branch", "--list", "tenon/*") == ""
+    assert git(repo_with_remote.work, "branch", "--list", "sdkfit/*") == ""
     assert remote.push_repo != repo_with_remote.work
     assert remote.commit_subject == draft.commit_message
     assert remote.commit_files == a_rename_proposal.files
@@ -360,7 +360,7 @@ def test_a_garbage_diff_is_patch_did_not_apply(
     assert result.refusal is PrRefusal.PATCH_DID_NOT_APPLY
     assert remote.calls[-1][0] == "branch_exists"
     assert tree_hashes(repo_with_remote.work) == before
-    assert git(repo_with_remote.work, "branch", "--list", "tenon/*") == ""
+    assert git(repo_with_remote.work, "branch", "--list", "sdkfit/*") == ""
 
 
 # Spec AC5: a file path that could escape the clone is a caller error.
@@ -493,7 +493,7 @@ def test_allow_unverified_opens_a_draft_pr_naming_the_cause(
     assert pr[0] == "create_pr"
     assert pr[-1] is True
     assert "Cause: NO_TESTS_FOUND" in pr[5]
-    assert "## Tenon proof: UNVERIFIED" in pr[5]
+    assert "## SDK Fit proof: UNVERIFIED" in pr[5]
 
 
 # Spec AC3: a build-only proof below the required tests is refused before any remote call.
@@ -683,7 +683,7 @@ class LocalRemote(GitGhRemote):
 
     def create_pr(self, repo, *, branch, base, title, body, draft):
         self.pr = {"repo": repo, "base": base, "title": title, "body": body}
-        return "https://example.test/tenon/pull/1"
+        return "https://example.test/sdkfit/pull/1"
 
 
 # Spec AC10/AC11: real git, local bare remote, no gh and no network.
@@ -699,7 +699,7 @@ def test_offline_end_to_end_with_the_real_git_adapter(
     )
 
     assert result.status is PrStatus.OPENED
-    assert result.url == "https://example.test/tenon/pull/1"
+    assert result.url == "https://example.test/sdkfit/pull/1"
     assert remote.pr["base"] == "main"
     assert remote.pr["title"] == draft.title
     assert remote.pr["body"] == draft.body
@@ -731,7 +731,7 @@ def test_offline_end_to_end_with_the_real_git_adapter(
         ).split()
         == list(a_rename_proposal.files)
     )
-    assert git(repo_with_remote.work, "branch", "--list", "tenon/*") == ""
+    assert git(repo_with_remote.work, "branch", "--list", "sdkfit/*") == ""
     assert tree_hashes(repo_with_remote.work) == before
 
 
@@ -745,9 +745,9 @@ def test_write_pr_exposes_the_required_level_with_safe_defaults():
     assert parameters["allow_unverified"].default is False
 
 
-# Plan phase 4: `tenon.pr` is the full public surface for the writer.
+# Plan phase 4: `sdkfit.pr` is the full public surface for the writer.
 def test_package_exports_the_full_public_surface():
-    from tenon.pr import (
+    from sdkfit.pr import (
         GitGhRemote,
         PrDraft,
         PrRefusal,

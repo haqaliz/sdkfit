@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from tenon.corpus.record import CorpusRecord, Outcome, record_id
-from tenon.corpus.report import CorpusReport, LevelStats, benchmark
-from tenon.corpus.store import CorpusError
-from tenon.prove.result import ProofLevel
+from sdkfit.corpus.record import CorpusRecord, Outcome, record_id
+from sdkfit.corpus.report import CorpusReport, LevelStats, benchmark
+from sdkfit.corpus.store import CorpusError
+from sdkfit.prove.result import ProofLevel
 
 REPO = "https://github.com/o/r"
 
@@ -242,7 +242,7 @@ def test_text_is_stable():
 
 # Spec: the package exports the report surface.
 def test_package_exports_the_report_surface():
-    import tenon.corpus as corpus
+    import sdkfit.corpus as corpus
 
     assert corpus.LevelStats is LevelStats
     assert corpus.CorpusReport is CorpusReport

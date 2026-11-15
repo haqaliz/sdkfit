@@ -33,8 +33,8 @@ The Dockerfile installs the `app` and `postgres` extras, so one image runs SQLit
 Postgres in the cluster.
 
 ```sh
-docker build -t ghcr.io/OWNER/tenon:X.Y.Z .
-docker push ghcr.io/OWNER/tenon:X.Y.Z
+docker build -t ghcr.io/OWNER/sdkfit:X.Y.Z .
+docker push ghcr.io/OWNER/sdkfit:X.Y.Z
 ```
 
 Set that reference in `deploy/k8s/deployment.yaml` (`image:`). Pin a version tag, not `latest`.
@@ -44,19 +44,19 @@ Set that reference in `deploy/k8s/deployment.yaml` (`image:`). Pin a version tag
 The manifests expect a namespace of your choice; the examples have no `metadata.namespace`.
 
 ```sh
-kubectl create namespace tenon
-kubectl -n tenon apply -f deploy/k8s/secret.example.yaml   # after filling it
-kubectl -n tenon apply -f deploy/k8s/configmap.example.yaml
+kubectl create namespace sdkfit
+kubectl -n sdkfit apply -f deploy/k8s/secret.example.yaml   # after filling it
+kubectl -n sdkfit apply -f deploy/k8s/configmap.example.yaml
 ```
 
 Before applying, copy the examples and replace every placeholder:
 
-- `tenon-secrets` / `api-token`: a long random bearer token (clients and Prometheus use it).
-- `tenon-secrets` / `webhook-secret`: the GitHub App webhook secret (used by `--trigger`).
-- `tenon-secrets` / `database-url`: `postgresql://tenon:<password>@<host>:5432/tenon`.
-- `tenon-secrets` / `postgres-password`: the same password, only for the example Postgres.
-- `tenon-app-key` / `app.pem`: the GitHub App private key, mounted at `/secrets/app.pem`.
-- `tenon-config` / `app-id`, `app-installation-id`: the GitHub App identity.
+- `sdkfit-secrets` / `api-token`: a long random bearer token (clients and Prometheus use it).
+- `sdkfit-secrets` / `webhook-secret`: the GitHub App webhook secret (used by `--trigger`).
+- `sdkfit-secrets` / `database-url`: `postgresql://sdkfit:<password>@<host>:5432/sdkfit`.
+- `sdkfit-secrets` / `postgres-password`: the same password, only for the example Postgres.
+- `sdkfit-app-key` / `app.pem`: the GitHub App private key, mounted at `/secrets/app.pem`.
+- `sdkfit-config` / `app-id`, `app-installation-id`: the GitHub App identity.
 
 Never commit the filled files. Rotate the token and webhook secret the same way as in
 `DEPLOYMENT.md` (update the Secret, restart the pods, update API clients and GitHub).
@@ -68,27 +68,27 @@ Use a managed, backed-up Postgres in production and set `database-url` to it. Th
 installs: it has one replica, no failover and no backups of its own.
 
 ```sh
-kubectl -n tenon apply -f deploy/k8s/postgres.yaml   # optional demo database
+kubectl -n sdkfit apply -f deploy/k8s/postgres.yaml   # optional demo database
 ```
 
 The service creates the `runs` and `events` tables and the queue index on first open
 (`CREATE ... IF NOT EXISTS`); it needs no migration job. `SKIP LOCKED` requires Postgres 9.5+. The
-Deployment passes the secret key to `provider serve` as `TENON_DATABASE_URL`; the equivalent flag is
+Deployment passes the secret key to `provider serve` as `SDKFIT_DATABASE_URL`; the equivalent flag is
 `--database-url`.
 
 Startup recovery only re-queues a `running` row whose `started_at` is older than `now - --run-timeout`
 (or cancels a run whose cancel was requested). A live peer's run is never stolen. A run that crashed
-just before the cutoff stays `running` until a later restart or pod start; monitor `tenon_runs`.
+just before the cutoff stays `running` until a later restart or pod start; monitor `sdkfit_runs`.
 
 ## Bundles
 
-The Deployment mounts the `tenon-bundles` PVC read-only at `/data/bundles`. The claim requests
+The Deployment mounts the `sdkfit-bundles` PVC read-only at `/data/bundles`. The claim requests
 `ReadWriteMany`; provide a storage class that supports it (a cloud file share or NFS). Populate it
 before scaling up, for example:
 
 ```sh
-kubectl -n tenon run bundles --rm -it --image=busybox \
-  --overrides='{"spec":{"volumes":[{"name":"b","persistentVolumeClaim":{"claimName":"tenon-bundles"}}],"containers":[{"name":"bundles","image":"busybox","stdin":true,"tty":true,"volumeMounts":[{"name":"b","mountPath":"/data"}]}]}}' \
+kubectl -n sdkfit run bundles --rm -it --image=busybox \
+  --overrides='{"spec":{"volumes":[{"name":"b","persistentVolumeClaim":{"claimName":"sdkfit-bundles"}}],"containers":[{"name":"bundles","image":"busybox","stdin":true,"tty":true,"volumeMounts":[{"name":"b","mountPath":"/data"}]}]}}' \
   -- sh
 # then copy bundle JSON files into /data (or populate the share from a job/bucket sync)
 ```
@@ -99,12 +99,12 @@ failed run, not a crash.
 ## Apply
 
 ```sh
-kubectl -n tenon apply -k deploy/k8s
-kubectl -n tenon rollout status deployment/tenon
-kubectl -n tenon get pods,svc,hpa,ingress
+kubectl -n sdkfit apply -k deploy/k8s
+kubectl -n sdkfit rollout status deployment/sdkfit
+kubectl -n sdkfit get pods,svc,hpa,ingress
 ```
 
-Edit `ingress.yaml` first: replace `tenon.example.com` with your DNS name (in `tls.hosts` and
+Edit `ingress.yaml` first: replace `sdkfit.example.com` with your DNS name (in `tls.hosts` and
 `rules.host`). Point the DNS record at the ingress controller's address.
 
 The kustomization applies the Deployment, Service, Ingress, HPA and bundle PVC. Secrets, the
@@ -114,11 +114,11 @@ ConfigMap and the optional Postgres are applied separately so placeholders never
 
 - **cert-manager:** add a `ClusterIssuer` and the usual
   `cert-manager.io/cluster-issuer: letsencrypt-prod` annotation to `ingress.yaml`; it fills the
-  `tenon-tls` secret.
+  `sdkfit-tls` secret.
 - **Bring your own certificate:**
 
   ```sh
-  kubectl -n tenon create secret tls tenon-tls --cert=fullchain.pem --key=privkey.pem
+  kubectl -n sdkfit create secret tls sdkfit-tls --cert=fullchain.pem --key=privkey.pem
   ```
 
 The ingress redirects HTTP to HTTPS (`ssl-redirect`). Nothing inside the cluster is TLS; the Service
@@ -150,25 +150,25 @@ with a `credentials_file` holding the API token, as in `DEPLOYMENT.md`:
 
 ```yaml
 scrape_configs:
-  - job_name: tenon
+  - job_name: sdkfit
     scheme: https
     authorization:
-      credentials_file: /etc/prometheus/tenon-token
+      credentials_file: /etc/prometheus/sdkfit-token
     static_configs:
-      - targets: ["tenon.example.com"]
+      - targets: ["sdkfit.example.com"]
 ```
 
 The service logs JSON-ish structured lines to stdout/stderr; the token, webhook secret and key
 contents are never logged.
 
 ```sh
-kubectl -n tenon logs deployment/tenon --tail=100
+kubectl -n sdkfit logs deployment/sdkfit --tail=100
 ```
 
 ## Backups
 
 - **Database:** use the managed service's point-in-time recovery. For the example StatefulSet,
-  schedule `pg_dump -U tenon -d tenon` to object storage, or snapshot the PVC; a single PVC is not a
+  schedule `pg_dump -U sdkfit -d sdkfit` to object storage, or snapshot the PVC; a single PVC is not a
   backup.
 - **Bundles:** keep the bundle directory in version control or a versioned object store; the PVC is
   a cache.
@@ -181,8 +181,8 @@ stranded rows past the lease.
 
 1. Back up the database.
 2. Push the new image tag and update `image:` in `deployment.yaml`.
-3. `kubectl -n tenon apply -k deploy/k8s`; the rolling update keeps at least one pod serving.
-4. Watch `kubectl -n tenon rollout status deployment/tenon` and the logs.
+3. `kubectl -n sdkfit apply -k deploy/k8s`; the rolling update keeps at least one pod serving.
+4. Watch `kubectl -n sdkfit rollout status deployment/sdkfit` and the logs.
 5. Keep the old image tag until the new pods are ready; roll back by re-applying the previous image.
 
 The schema only adds tables/indexes (`IF NOT EXISTS`), so an upgrade does not rewrite run history.

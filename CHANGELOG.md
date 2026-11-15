@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Tenon are documented here. The format follows
+All notable changes to SDK Fit are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions before 1.0 make no API-stability
 promise: flags, config keys and provider contracts may still change.
@@ -10,10 +10,15 @@ promise: flags, config keys and provider contracts may still change.
 ### Added
 
 - **Launch readiness (T16):** PyPI trusted publishing (OIDC, no token secret) behind the
-  `PYPI_PUBLISH` gate, a tag job that publishes `ghcr.io/haqaliz/tenon` with the service image, an
+  `PYPI_PUBLISH` gate, a tag job that publishes `ghcr.io/haqaliz/sdkfit` with the service image, an
   offline launch demo (`scripts/launch_demo.sh`) and a launch kit (`docs/launch/`) with positioning,
-  FAQ, gallery plan, first comment and the name/handles check. **The `tenonhq` name collides with
-  the active company at tenonhq.com; decide the launch name before submitting.**
+  FAQ, gallery plan, first comment and the name/handles check.
+
+### Changed
+
+- **Renamed to SDK Fit:** the distribution, import package and CLI are now `sdkfit` (the repository
+  is `haqaliz/sdkfit`), and the environment variables are `SDKFIT_*`. The old Tenon/`tenonhq` name
+  collided with an active company; historical releases below keep their original name.
 
 ## [0.4.0] - 2026-11-16
 

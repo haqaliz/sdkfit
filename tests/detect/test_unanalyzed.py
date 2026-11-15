@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from tenon.detect import Unanalyzed, UnanalyzedReason
+from sdkfit.detect import Unanalyzed, UnanalyzedReason
 
 
 def an_unanalyzed(reason=UnanalyzedReason.CYCLIC_REF):

@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from tenon.prove import (
+from sdkfit.prove import (
     PROOF_RANK,
     CheckResult,
     ProofCause,
@@ -546,7 +546,7 @@ def test_to_json_holds_only_json_primitives():
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.prove import CheckResult, ProofCause, ProofResult
+from sdkfit.prove import CheckResult, ProofCause, ProofResult
 
 baseline = CheckResult(
     kind="baseline",

@@ -2,9 +2,9 @@ import http.client
 import threading
 from http.server import ThreadingHTTPServer
 
-from tenon.service.api import Api
-from tenon.service.http import serve
-from tenon.service.store import RunStore
+from sdkfit.service.api import Api
+from sdkfit.service.http import serve
+from sdkfit.service.store import RunStore
 
 
 def an_api(tmp_path):

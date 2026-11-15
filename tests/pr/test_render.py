@@ -11,16 +11,16 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import (
+from sdkfit.detect import (
     Change,
     ChangeKind,
     Location,
     Unanalyzed,
     UnanalyzedReason,
 )
-from tenon.locate import Site, SiteShape
-from tenon.pr import render_pr
-from tenon.pr.render import (
+from sdkfit.locate import Site, SiteShape
+from sdkfit.pr import render_pr
+from sdkfit.pr.render import (
     CHARACTERIZED_PROOF,
     CHARACTERIZED_SENTENCE,
     REPLAYED_PROOF,
@@ -35,8 +35,8 @@ from tenon.pr.render import (
     _summary,
     _title,
 )
-from tenon.propose import SkipReason, Skipped
-from tenon.prove import CheckResult, ProofCause, ProofLevel
+from sdkfit.propose import SkipReason, Skipped
+from sdkfit.prove import CheckResult, ProofCause, ProofLevel
 
 CHARGE_POINTER = "#/components/schemas/Charge/properties"
 PROOF_BASIC = Path(__file__).parent.parent / "fixtures" / "repos" / "proof-basic"
@@ -78,9 +78,9 @@ def test_summary_uses_the_method_and_path():
 
 
 # Spec AC1: the title is the level, the prefix, and that one summary.
-def test_title_is_the_level_and_the_tenon_prefix(a_passed_proof):
+def test_title_is_the_level_and_the_sdkfit_prefix(a_passed_proof):
     assert _title(a_passed_proof, _summary(a_change())) == (
-        "[TESTS_PASSED] tenon: renamed POST /v1/checkout/sessions: "
+        "[TESTS_PASSED] sdkfit: renamed POST /v1/checkout/sessions: "
         "payment_method_types -> allowed_payment_method_types"
     )
 
@@ -88,7 +88,7 @@ def test_title_is_the_level_and_the_tenon_prefix(a_passed_proof):
 # Spec AC1: the commit subject is the same summary, with no level.
 def test_commit_message_is_the_summary_without_the_level():
     assert _commit_message(_summary(a_change())) == (
-        "tenon: renamed POST /v1/checkout/sessions: payment_method_types -> "
+        "sdkfit: renamed POST /v1/checkout/sessions: payment_method_types -> "
         "allowed_payment_method_types"
     )
 
@@ -132,7 +132,7 @@ def test_summary_renders_values_readably(before, after, rendered):
     )
 
 
-BRANCH = re.compile(r"tenon/[a-z0-9-]+-[0-9a-f]{8}")
+BRANCH = re.compile(r"sdkfit/[a-z0-9-]+-[0-9a-f]{8}")
 
 
 # Spec AC3: the branch shape is fixed.
@@ -194,12 +194,12 @@ def test_branch_suffix_hashes_the_canonical_change_and_diff():
     )
     expected = hashlib.sha256(payload).hexdigest()[:8]
 
-    assert _branch(change, "diff") == f"tenon/{_slug(_summary(change))}-{expected}"
+    assert _branch(change, "diff") == f"sdkfit/{_slug(_summary(change))}-{expected}"
 
 
 
 PASSED_BODY = """\
-## Tenon proof: TESTS_PASSED
+## SDK Fit proof: TESTS_PASSED
 
 The command returned 0 before and after the patch in an isolated copy.
 
@@ -228,9 +228,9 @@ None.
 
 ### What this proves
 
-The check ran green before and after the patch, so the change did not break the command Tenon ran. It does not prove the change is correct.
+The check ran green before and after the patch, so the change did not break the command SDK Fit ran. It does not prove the change is correct.
 
-Opened by Tenon. No merge was performed.
+Opened by SDK Fit. No merge was performed.
 """
 
 
@@ -246,8 +246,8 @@ def test_render_pr_reuses_the_summary_in_the_title_and_commit(
     draft = render_pr(a_rename_proposal, a_passed_proof)
     summary = _summary(a_rename_proposal.change)
 
-    assert draft.title == f"[TESTS_PASSED] tenon: {summary}"
-    assert draft.commit_message == f"tenon: {summary}"
+    assert draft.title == f"[TESTS_PASSED] sdkfit: {summary}"
+    assert draft.commit_message == f"sdkfit: {summary}"
 
 
 # Spec AC4: the sections keep the fixed order.
@@ -256,7 +256,7 @@ def test_passed_body_sections_are_in_the_fixed_order(
 ):
     body = render_pr(a_rename_proposal, a_passed_proof).body
     headings = [
-        "## Tenon proof: TESTS_PASSED",
+        "## SDK Fit proof: TESTS_PASSED",
         "### Change",
         "### Check",
         "### Files",
@@ -345,13 +345,13 @@ def test_passed_body_ends_with_the_footer_and_one_newline(
 ):
     body = render_pr(a_rename_proposal, a_passed_proof).body
 
-    assert body.endswith("Opened by Tenon. No merge was performed.\n")
-    assert body.count("Opened by Tenon. No merge was performed.") == 1
+    assert body.endswith("Opened by SDK Fit. No merge was performed.\n")
+    assert body.count("Opened by SDK Fit. No merge was performed.") == 1
     assert not body.endswith("\n\n")
 
 
 UNVERIFIED_BODY = """\
-## Tenon proof: UNVERIFIED
+## SDK Fit proof: UNVERIFIED
 
 Nothing proved the patch.
 Cause: NO_TESTS_FOUND
@@ -383,7 +383,7 @@ None.
 
 Nothing was proven. This is a flagged suggestion: review the change and run the check before merging.
 
-Opened by Tenon. No merge was performed.
+Opened by SDK Fit. No merge was performed.
 """
 
 
@@ -474,7 +474,7 @@ def test_unverified_body_caps_the_failure_tail(
 
 # Spec AC6: the text excludes any word that would overstate a build-only result.
 TYPES_BUILD_ONLY_BODY = """\
-## Tenon proof: TYPES_BUILD_ONLY
+## SDK Fit proof: TYPES_BUILD_ONLY
 
 The build or type-check command returned 0 before and after the patch; no tests ran.
 
@@ -505,7 +505,7 @@ None.
 
 The build or type-check ran green before and after the patch, so the change did not break it. No tests ran: this is weak proof, and it does not prove the change is correct.
 
-Opened by Tenon. No merge was performed.
+Opened by SDK Fit. No merge was performed.
 """
 
 
@@ -515,12 +515,12 @@ def test_types_build_only_body_is_the_golden_text(a_rename_proposal, a_proof_at)
         a_rename_proposal, a_proof_at(ProofLevel.TYPES_BUILD_ONLY)
     )
 
-    assert draft.title.startswith("[TYPES_BUILD_ONLY] tenon: ")
+    assert draft.title.startswith("[TYPES_BUILD_ONLY] sdkfit: ")
     assert draft.body == TYPES_BUILD_ONLY_BODY
 
 
 CHARACTERIZED_BODY = """\
-## Tenon proof: CHARACTERIZED
+## SDK Fit proof: CHARACTERIZED
 
 The user-supplied characterization command returned 0 before and after the patch.
 
@@ -549,9 +549,9 @@ None.
 
 ### What this proves
 
-The characterization command ran green before and after the patch. It checks current behavior, not the vendor's new API; Tenon did not generate it. It does not prove the change is correct.
+The characterization command ran green before and after the patch. It checks current behavior, not the vendor's new API; SDK Fit did not generate it. It does not prove the change is correct.
 
-Opened by Tenon. No merge was performed.
+Opened by SDK Fit. No merge was performed.
 """
 
 
@@ -559,12 +559,12 @@ Opened by Tenon. No merge was performed.
 def test_characterized_body_is_the_golden_text(a_rename_proposal, a_proof_at):
     draft = render_pr(a_rename_proposal, a_proof_at(ProofLevel.CHARACTERIZED))
 
-    assert draft.title.startswith("[CHARACTERIZED] tenon: ")
+    assert draft.title.startswith("[CHARACTERIZED] sdkfit: ")
     assert draft.body == CHARACTERIZED_BODY
 
 
 REPLAYED_BODY = """\
-## Tenon proof: REPLAYED
+## SDK Fit proof: REPLAYED
 
 The user-supplied recorded-call replay returned 0 before and after the patch.
 
@@ -593,9 +593,9 @@ None.
 
 ### What this proves
 
-The recorded-call replay ran green before and after the patch. The recording was supplied, not made by Tenon, so it only proves the replayed calls behaved as recorded. It does not prove the change is correct.
+The recorded-call replay ran green before and after the patch. The recording was supplied, not made by SDK Fit, so it only proves the replayed calls behaved as recorded. It does not prove the change is correct.
 
-Opened by Tenon. No merge was performed.
+Opened by SDK Fit. No merge was performed.
 """
 
 
@@ -603,7 +603,7 @@ Opened by Tenon. No merge was performed.
 def test_replayed_body_is_the_golden_text(a_rename_proposal, a_proof_at):
     draft = render_pr(a_rename_proposal, a_proof_at(ProofLevel.REPLAYED))
 
-    assert draft.title.startswith("[REPLAYED] tenon: ")
+    assert draft.title.startswith("[REPLAYED] sdkfit: ")
     assert draft.body == REPLAYED_BODY
 
 
@@ -721,17 +721,17 @@ def test_render_pr_is_deterministic_for_the_same_inputs(
 
 
 DETERMINISM_SCRIPT = """
-from tenon.detect import (
+from sdkfit.detect import (
     Change,
     ChangeKind,
     Location,
     Unanalyzed,
     UnanalyzedReason,
 )
-from tenon.locate import Site, SiteShape
-from tenon.pr import render_pr
-from tenon.propose import Edit, Proposal, SkipReason, Skipped
-from tenon.prove import CheckResult, ProofCause, ProofLevel, ProofResult
+from sdkfit.locate import Site, SiteShape
+from sdkfit.pr import render_pr
+from sdkfit.propose import Edit, Proposal, SkipReason, Skipped
+from sdkfit.prove import CheckResult, ProofCause, ProofLevel, ProofResult
 
 change = Change(
     kind=ChangeKind.RENAMED,

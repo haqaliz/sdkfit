@@ -1,12 +1,12 @@
 # Launch kit
 
-> **Blocker first:** the working name **Tenon** and the distribution **`tenonhq`** collide with the
-> active company at **tenonhq.com**. Do not submit the Product Hunt launch until the name decision
-> in [`NAME_CHECK.md`](NAME_CHECK.md) is resolved. Everything below uses the working name.
+> **Name:** **SDK Fit** (`sdkfit`), chosen after the original working name collided with an active
+> company. The live availability check and the history are in [`NAME_CHECK.md`](NAME_CHECK.md);
+> `sdkfit.com` is registered but has no site, so the launch uses **sdkfit.dev**.
 
 ## Positioning
 
-**Tenon keeps consumer code fitted to the APIs it depends on.** It reads two versions of an API
+**SDK Fit keeps consumer code fitted to the APIs it depends on.** It reads two versions of an API
 contract, finds the call sites that break, rewrites only the ones it can prove, runs your own checks,
 and proposes a reviewed PR. It does not guess with an LLM and it does not merge.
 
@@ -17,7 +17,7 @@ and proposes a reviewed PR. It does not guess with an LLM and it does not merge.
 - **Developers** who want the mechanical part of a migration done and proven, not a chatbot's diff.
 
 **When it is not a fit:** a team that wants a hosted autopilot SaaS, or an API change with no
-machine-readable contract (Tenon works from OpenAPI 3.x and MCP tool schemas).
+machine-readable contract (SDK Fit works from OpenAPI 3.x and MCP tool schemas).
 
 ## Tagline options
 
@@ -28,13 +28,13 @@ machine-readable contract (Tenon works from OpenAPI 3.x and MCP tool schemas).
 ## Descriptions
 
 - **One line (≤60 chars):** `Fixes breaking API changes in consumer code — proven.`
-- **Short (Product Hunt pitch):** Tenon finds the consumer call sites a breaking API change breaks,
+- **Short (Product Hunt pitch):** SDK Fit finds the consumer call sites a breaking API change breaks,
   rewrites the ones it can prove, runs your own checks, and opens a reviewed PR. Five languages,
   offline analysis, self-hosted.
 - **Long:**
 
   > When an API ships a breaking change, the vendor knows first and the customers find out in
-  > production. Tenon closes that gap. It reads the old and new OpenAPI spec (or MCP tool schema),
+  > production. SDK Fit closes that gap. It reads the old and new OpenAPI spec (or MCP tool schema),
   > locates the affected call sites across Python, TypeScript/JavaScript, Rust, Go and C#, and
   > proposes the mechanical fix for the certain ones. It applies the diff to a copy, runs your proof
   > stages before and after, and labels the result `TESTS_PASSED`, `CHARACTERIZED`, `REPLAYED` or
@@ -42,7 +42,7 @@ machine-readable contract (Tenon works from OpenAPI 3.x and MCP tool schemas).
   > reviewed PR. Vendors can run the same pipeline from a portable migration bundle across many
   > customer repos, with an optional self-hosted queue and service.
   >
-  > Tenon is pre-1.0, Apache-2.0, and runs on your machine or your cluster. No LLM in the analysis
+  > SDK Fit is pre-1.0, Apache-2.0, and runs on your machine or your cluster. No LLM in the analysis
   > path, no force-push, no auto-merge.
 
 ## Differentiators
@@ -54,7 +54,7 @@ machine-readable contract (Tenon works from OpenAPI 3.x and MCP tool schemas).
 - **A provider path, not just a CLI.** A portable bundle, an installed fan-out, webhook-triggered
   runs, and a self-hosted service with SQLite or Postgres and Kubernetes manifests.
 - **Five languages.** Python, TypeScript/JavaScript, Rust, Go, C#.
-- **BYOK and BYO auth.** Your repo, your token, your GitHub App; no Tenon account.
+- **BYOK and BYO auth.** Your repo, your token, your GitHub App; no SDK Fit account.
 
 ## What not to claim
 
@@ -71,27 +71,27 @@ machine-readable contract (Tenon works from OpenAPI 3.x and MCP tool schemas).
 Today, from source:
 
 ```sh
-git clone https://github.com/haqaliz/tenon.git
-cd tenon
+git clone https://github.com/haqaliz/sdkfit.git
+cd sdkfit
 uv sync
-uv run tenon --version
+uv run sdkfit --version
 bash scripts/launch_demo.sh
 ```
 
-After the next tag publishes (and the name decision is made), the launch install is:
+After the next tag publishes, the launch install is:
 
 ```sh
-pip install tenonhq        # replace with the final distribution name
-tenon --version
-tenon check --help
+pip install sdkfit
+sdkfit --version
+sdkfit check --help
 ```
 
 ## Launch-day checklist
 
-- [ ] **Name decision** from `NAME_CHECK.md`; re-check PyPI/npm/GitHub/domain/Product Hunt for it.
+- [ ] **Name confirmed** in `NAME_CHECK.md`; re-check PyPI/npm/GitHub/domain/Product Hunt just before the launch.
 - [ ] PyPI trusted publisher configured, `PYPI_PUBLISH=true`, next tag published; a clean
-      `pip install <name>` in a fresh venv prints `tenon <version>`.
-- [ ] GHCR image public; `docker pull ghcr.io/haqaliz/tenon:<version>` succeeds; the manifest pins
+      `pip install <name>` in a fresh venv prints `sdkfit <version>`.
+- [ ] GHCR image public; `docker pull ghcr.io/haqaliz/sdkfit:<version>` succeeds; the manifest pins
       that tag.
 - [ ] `bash scripts/launch_demo.sh` is green and `docs/launch/DEMO.md` still matches.
 - [ ] README install section switched to the published command; CI/version/changelog links current.

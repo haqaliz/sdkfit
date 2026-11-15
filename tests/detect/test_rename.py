@@ -1,5 +1,5 @@
-from tenon.detect import Change, ChangeKind, Location, diff
-from tenon.detect.rename import infer_renames
+from sdkfit.detect import Change, ChangeKind, Location, diff
+from sdkfit.detect.rename import infer_renames
 
 PROPS = "#/paths/~1users/post/requestBody/content/application~1json/schema/properties"
 

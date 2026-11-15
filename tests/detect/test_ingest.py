@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import RefusalCode, SpecRefusal
-from tenon.detect.ingest import load, parse
+from sdkfit.detect import RefusalCode, SpecRefusal
+from sdkfit.detect.ingest import load, parse
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "specs"
 

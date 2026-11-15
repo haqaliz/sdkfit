@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from tenon.prove.run import run_check
+from sdkfit.prove.run import run_check
 
 
 def check(command, cwd, kind="baseline", timeout=5.0):
@@ -35,11 +35,11 @@ def test_a_non_zero_exit_keeps_its_code_and_kind(tmp_path):
 
 # Spec AC9: a missing executable is an ordinary failed check, never an exception.
 def test_a_missing_executable_returns_127_naming_it(tmp_path):
-    result = check(["tenon-no-such-command-xyz"], tmp_path)
+    result = check(["sdkfit-no-such-command-xyz"], tmp_path)
 
     assert result.returncode == 127
     assert result.timed_out is False
-    assert "tenon-no-such-command-xyz" in result.stderr_tail
+    assert "sdkfit-no-such-command-xyz" in result.stderr_tail
 
 
 # Spec AC7: a timeout has no return code, and the call does not wait for the child.
@@ -90,10 +90,10 @@ def test_stdout_and_stderr_are_recorded_separately(tmp_path):
 
 # PRD M10: the caller's environment is inherited unchanged.
 def test_the_callers_environment_reaches_the_check(tmp_path, monkeypatch):
-    monkeypatch.setenv("TENON_PROVE_CHECK", "visible")
+    monkeypatch.setenv("SDKFIT_PROVE_CHECK", "visible")
 
     result = check(
-        [sys.executable, "-c", "import os; print(os.environ['TENON_PROVE_CHECK'])"],
+        [sys.executable, "-c", "import os; print(os.environ['SDKFIT_PROVE_CHECK'])"],
         tmp_path,
     )
 

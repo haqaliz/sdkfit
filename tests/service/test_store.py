@@ -6,10 +6,10 @@ from itertools import count
 
 import pytest
 
-from tenon.service import Event as ExportedEvent
-from tenon.service import Run as ExportedRun
-from tenon.service import RunStore as ExportedRunStore
-from tenon.service.store import Event, Run, RunStore, Store, StoreError
+from sdkfit.service import Event as ExportedEvent
+from sdkfit.service import Run as ExportedRun
+from sdkfit.service import RunStore as ExportedRunStore
+from sdkfit.service.store import Event, Run, RunStore, Store, StoreError
 
 NOW = datetime(2026, 11, 11, 12, 0, tzinfo=timezone.utc)
 STAMP = "2026-11-11T12:00:00+00:00"

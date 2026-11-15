@@ -5,9 +5,9 @@ import sys
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import AmbiguityReason, Site, SiteShape
-from tenon.propose import Edit, Proposal, ProposalReason, SkipReason, Skipped
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import AmbiguityReason, Site, SiteShape
+from sdkfit.propose import Edit, Proposal, ProposalReason, SkipReason, Skipped
 
 
 def a_site(**overrides):
@@ -316,9 +316,9 @@ def test_empty_proposal_round_trips_every_reason(reason):
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import Site
-from tenon.propose import Edit, Proposal, SkipReason, Skipped
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import Site
+from sdkfit.propose import Edit, Proposal, SkipReason, Skipped
 
 edits = [
     Edit(path=path, line=line, column=column, shape=shape, old=old, new=old + "_new")

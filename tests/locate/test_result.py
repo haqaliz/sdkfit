@@ -5,8 +5,8 @@ import sys
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     AmbiguousGroup,
     LocateConfig,
@@ -280,8 +280,8 @@ def test_to_json_holds_only_json_primitives():
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import AmbiguityReason, AmbiguousGroup, LocateResult, Site
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import AmbiguityReason, AmbiguousGroup, LocateResult, Site
 
 certain_sites = [
     Site(path=f"pkg/{name}.py", line=1, column=1, shape=shape, symbol=name)

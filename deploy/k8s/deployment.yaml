@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tenon
+  name: sdkfit
   labels:
-    app: tenon
+    app: sdkfit
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: tenon
+      app: sdkfit
   template:
     metadata:
       labels:
-        app: tenon
+        app: sdkfit
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
@@ -27,9 +27,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: tenon
+        - name: sdkfit
           # Published by the release workflow; pin the release tag in production.
-          image: ghcr.io/haqaliz/tenon:latest
+          image: ghcr.io/haqaliz/sdkfit:latest
           imagePullPolicy: IfNotPresent
           args:
             - provider
@@ -43,56 +43,56 @@ spec:
             - --workers
             - "4"
             - --app-id
-            - $(TENON_APP_ID)
+            - $(SDKFIT_APP_ID)
             - --app-installation-id
-            - $(TENON_APP_INSTALLATION_ID)
+            - $(SDKFIT_APP_INSTALLATION_ID)
             - --app-private-key
             - /secrets/app.pem
           env:
-            - name: TENON_DATABASE_URL
+            - name: SDKFIT_DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: tenon-secrets
+                  name: sdkfit-secrets
                   key: database-url
-            - name: TENON_API_TOKEN
+            - name: SDKFIT_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: tenon-secrets
+                  name: sdkfit-secrets
                   key: api-token
-            - name: TENON_WEBHOOK_SECRET
+            - name: SDKFIT_WEBHOOK_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: tenon-secrets
+                  name: sdkfit-secrets
                   key: webhook-secret
-            - name: TENON_APP_ID
+            - name: SDKFIT_APP_ID
               valueFrom:
                 configMapKeyRef:
-                  name: tenon-config
+                  name: sdkfit-config
                   key: app-id
-            - name: TENON_APP_INSTALLATION_ID
+            - name: SDKFIT_APP_INSTALLATION_ID
               valueFrom:
                 configMapKeyRef:
-                  name: tenon-config
+                  name: sdkfit-config
                   key: app-installation-id
             - name: GIT_AUTHOR_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: tenon-config
+                  name: sdkfit-config
                   key: git-author-name
             - name: GIT_AUTHOR_EMAIL
               valueFrom:
                 configMapKeyRef:
-                  name: tenon-config
+                  name: sdkfit-config
                   key: git-author-email
             - name: GIT_COMMITTER_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: tenon-config
+                  name: sdkfit-config
                   key: git-author-name
             - name: GIT_COMMITTER_EMAIL
               valueFrom:
                 configMapKeyRef:
-                  name: tenon-config
+                  name: sdkfit-config
                   key: git-author-email
           ports:
             - name: http
@@ -133,9 +133,9 @@ spec:
       volumes:
         - name: bundles
           persistentVolumeClaim:
-            claimName: tenon-bundles
+            claimName: sdkfit-bundles
         - name: app-key
           secret:
-            secretName: tenon-app-key
+            secretName: sdkfit-app-key
         - name: tmp
           emptyDir: {}

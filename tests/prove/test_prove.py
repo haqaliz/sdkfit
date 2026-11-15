@@ -10,11 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location, diff, parse
-from tenon.locate import LocateConfig, locate
-from tenon.propose import Edit, Proposal, ProposalReason, propose
-from tenon.propose.render import render
-from tenon.prove import CopyError, ProofCause, ProofLevel, prove
+from sdkfit.detect import Change, ChangeKind, Location, diff, parse
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.propose import Edit, Proposal, ProposalReason, propose
+from sdkfit.propose.render import render
+from sdkfit.prove import CopyError, ProofCause, ProofLevel, prove
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "repos"
 PROOF_BASIC = FIXTURES / "proof-basic"
@@ -51,7 +51,7 @@ def source_unchanged_and_copies_removed(tmp_path, monkeypatch):
     yield
 
     assert tree_hashes(PROOF_BASIC) == before
-    assert list(tmp_path.glob("tenon-prove-*")) == []
+    assert list(tmp_path.glob("sdkfit-prove-*")) == []
 
 
 def a_rename_proposal(root=PROOF_BASIC, proposer=None):
@@ -102,7 +102,7 @@ def test_an_empty_command_is_no_tests_found_without_copying(command, monkeypatch
     def unexpected(*args, **kwargs):
         raise AssertionError("an empty command must not copy")
 
-    monkeypatch.setattr("tenon.prove.copy.copy_tree", unexpected)
+    monkeypatch.setattr("sdkfit.prove.copy.copy_tree", unexpected)
 
     result = prove(a_rename_proposal(), PROOF_BASIC, command)
 
@@ -169,7 +169,7 @@ def test_a_red_baseline_is_tests_failed_before_and_never_applies_the_patch(
     def unexpected(*args, **kwargs):
         raise AssertionError("a red baseline must not apply the patch")
 
-    monkeypatch.setattr("tenon.prove.run.apply_diff", unexpected)
+    monkeypatch.setattr("sdkfit.prove.run.apply_diff", unexpected)
 
     result = prove(
         a_rename_proposal(),
@@ -218,13 +218,13 @@ def test_a_garbage_diff_is_patch_did_not_apply():
 # Spec AC9: a missing executable is a failed baseline, not NO_TESTS_FOUND.
 def test_a_missing_executable_is_tests_failed_before_with_127():
     result = prove(
-        a_rename_proposal(), PROOF_BASIC, ["tenon-no-such-command-xyz"]
+        a_rename_proposal(), PROOF_BASIC, ["sdkfit-no-such-command-xyz"]
     )
 
     assert result.level is ProofLevel.UNVERIFIED
     assert result.cause is ProofCause.TESTS_FAILED_BEFORE
     assert result.baseline.returncode == 127
-    assert "tenon-no-such-command-xyz" in result.baseline.stderr_tail
+    assert "sdkfit-no-such-command-xyz" in result.baseline.stderr_tail
     assert result.after is None
     assert result.patch_applied is False
 
@@ -286,7 +286,7 @@ def test_a_copy_error_while_copying_is_copy_failed(monkeypatch):
     def failing(*args, **kwargs):
         raise CopyError(ProofCause.COPY_FAILED, "disk full")
 
-    monkeypatch.setattr("tenon.prove.copy.copy_tree", failing)
+    monkeypatch.setattr("sdkfit.prove.copy.copy_tree", failing)
 
     result = prove(a_rename_proposal(), PROOF_BASIC, COMMAND)
 
@@ -316,7 +316,7 @@ def test_an_oserror_from_the_body_propagates_instead_of_copy_failed(monkeypatch)
     def exploding(*args, **kwargs):
         raise OSError("body exploded")
 
-    monkeypatch.setattr("tenon.prove.run._run", exploding)
+    monkeypatch.setattr("sdkfit.prove.run._run", exploding)
 
     with pytest.raises(OSError, match="body exploded"):
         prove(a_rename_proposal(), PROOF_BASIC, COMMAND)
@@ -327,7 +327,7 @@ def test_a_timeout_while_applying_the_diff_is_patch_did_not_apply(monkeypatch):
     def timing_out(*args, **kwargs):
         raise subprocess.TimeoutExpired("git apply", 60)
 
-    monkeypatch.setattr("tenon.prove.run.apply_diff", timing_out)
+    monkeypatch.setattr("sdkfit.prove.run.apply_diff", timing_out)
 
     result = prove(a_rename_proposal(), PROOF_BASIC, COMMAND)
 
@@ -340,10 +340,10 @@ def test_a_timeout_while_applying_the_diff_is_patch_did_not_apply(monkeypatch):
 
 PROVE_SCRIPT = """
 import sys
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, locate
-from tenon.propose import propose
-from tenon.prove import prove
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.propose import propose
+from sdkfit.prove import prove
 
 root = sys.argv[1]
 change = Change(

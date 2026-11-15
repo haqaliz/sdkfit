@@ -1,14 +1,14 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: tenon
+  name: sdkfit
   labels:
-    app: tenon
+    app: sdkfit
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: tenon
+    name: sdkfit
   minReplicas: 2
   maxReplicas: 10
   metrics:

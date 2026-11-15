@@ -1,9 +1,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tenon
+  name: sdkfit
   labels:
-    app: tenon
+    app: sdkfit
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/limit-rps: "10"
@@ -13,16 +13,16 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - tenon.example.com
-      secretName: tenon-tls
+        - sdkfit.example.com
+      secretName: sdkfit-tls
   rules:
-    - host: tenon.example.com
+    - host: sdkfit.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: tenon
+                name: sdkfit
                 port:
                   name: http

@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     LocateConfig,
     LocateReason,
@@ -19,7 +19,7 @@ from tenon.locate import (
     SiteShape,
     locate,
 )
-from tenon.propose import ProposalReason, SkipReason, propose
+from sdkfit.propose import ProposalReason, SkipReason, propose
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "repos"
 SDK_BASIC = FIXTURES / "sdk-basic"
@@ -321,9 +321,9 @@ def test_the_diff_applies_to_a_copy_with_git(tmp_path):
         [
             git,
             "-c",
-            "user.name=Tenon",
+            "user.name=SDK Fit",
             "-c",
-            "user.email=tenon@example.com",
+            "user.email=sdkfit@example.com",
             "commit",
             "-qm",
             "fixture",
@@ -350,9 +350,9 @@ def test_the_diff_applies_to_a_copy_with_git(tmp_path):
 
 
 SUBPROCESS_SCRIPT = """
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, locate
-from tenon.propose import propose
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.propose import propose
 
 change = Change(
     kind=ChangeKind.RENAMED,

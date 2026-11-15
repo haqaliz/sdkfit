@@ -3,7 +3,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from tenon.locate import (
+from sdkfit.locate import (
     CSharpLocateConfig,
     GoLocateConfig,
     LocateConfig,
@@ -11,8 +11,8 @@ from tenon.locate import (
     RustLocateConfig,
     TsLocateConfig,
 )
-from tenon.prove import ProofLevel
-from tenon.provider.bundle import load_bundle
+from sdkfit.prove import ProofLevel
+from sdkfit.provider.bundle import load_bundle
 
 
 MISSING = object()
@@ -551,7 +551,7 @@ def test_empty_command_array_is_allowed(tmp_path):
 
 
 # Spec AC1: the documented `check` key is the tests stage (the `command` alias
-# remains for tenon.toml familiarity).
+# remains for sdkfit.toml familiarity).
 def test_check_key_loads_the_tests_command(tmp_path):
     bundle = load_bundle(a_bundle(tmp_path, check=["python", "-c", "pass"]))
 
@@ -599,7 +599,7 @@ def test_missing_bundle_file_is_a_named_error(tmp_path):
 
 # Spec: the package surface is the bundle and its loader.
 def test_package_exports_the_bundle_and_loader(tmp_path):
-    from tenon.provider import MigrationBundle, load_bundle
+    from sdkfit.provider import MigrationBundle, load_bundle
 
     bundle = load_bundle(a_bundle(tmp_path))
 

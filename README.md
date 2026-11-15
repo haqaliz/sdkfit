@@ -1,11 +1,11 @@
-# Tenon
+# SDK Fit
 
 **Keeps your code fitted to the APIs it depends on.** Detects breaking API changes, patches the
 affected calls, and proves the fix against your own checks before it opens a pull request.
 
 [![Status](https://img.shields.io/badge/status-T1%20%2B%20T2%20%2B%20T3%20%2B%20T4%20%2B%20T5%20%2B%20T6%20%2B%20T7%20%2B%20MCP%20%2B%20probe%20%2B%20benchmark%20%2B%20GitHub%20App%20%2B%20provider%20%2B%20fan-out%20%2B%20installed%20fan-out%20%2B%20provider%20service%20%2B%20Rust%20%2B%20Go%20%2B%20C%23%20%2B%20receivers%20%2B%20deploy%20%2B%20resilience%20%2B%20CLI%20shipped-yellow)](docs/ROADMAP.md)
 [![Version](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
-[![CI](https://github.com/haqaliz/tenon/actions/workflows/ci.yml/badge.svg)](https://github.com/haqaliz/tenon/actions/workflows/ci.yml)
+[![CI](https://github.com/haqaliz/sdkfit/actions/workflows/ci.yml/badge.svg)](https://github.com/haqaliz/sdkfit/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Vision](VISION.md) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/technical/ARCHITECTURE.md) · [Capabilities](docs/technical/CAPABILITY_ROADMAP.md)
@@ -17,10 +17,10 @@ affected calls, and proves the fix against your own checks before it opens a pul
 From source today (the PyPI release is configured for the next tagged release):
 
 ```sh
-git clone https://github.com/haqaliz/tenon.git
-cd tenon
+git clone https://github.com/haqaliz/sdkfit.git
+cd sdkfit
 uv sync
-uv run tenon --version
+uv run sdkfit --version
 ```
 
 The launch demo runs offline in about 30 seconds: `bash scripts/launch_demo.sh`.
@@ -29,65 +29,65 @@ The launch demo runs offline in about 30 seconds: `bash scripts/launch_demo.sh`.
 
 **T1 (change detection), T2 (Python call-site location), T3 (patch proposal), T4 (proof runner),
 T5 (PR writer), T6 (TypeScript/JavaScript call-site location), T7 (proof ladder), T8 (MCP
-tool-schema diffs, Python tool-call location and `tenon probe`), T9 (benchmark corpus), T10a (GitHub
+tool-schema diffs, Python tool-call location and `sdkfit probe`), T9 (benchmark corpus), T10a (GitHub
 App remote), T10b (provider migration bundle), T10c (local provider fan-out), T10d (installed
 provider fan-out), T10e (hosted provider service), T10f (webhook-triggered runs), T11a (Rust
 call-site location), T11b (Go call-site location), T11c (C# call-site location), T12a (Rust/Go
 receiver tracking), T12b (C#/Python/TS receiver tracking), T12c (annotated return-type inference),
 T12d (typed-parameter inference), T12e (cross-file signatures and closures), T13a (deployable
-service), T13b (service resilience), T14 (CI and release pipeline), T15 (hardened cloud deployment)
-and the `tenon check` /
-`tenon fix` / `tenon provider migrate` / `tenon provider serve` / `tenon probe` / `tenon corpus` CLI
+service), T13b (service resilience), T14 (CI and release pipeline), T15 (hardened cloud deployment),
+T16 (launch readiness), T17 (rename to SDK Fit) and the `sdkfit check` /
+`sdkfit fix` / `sdkfit provider migrate` / `sdkfit provider serve` / `sdkfit probe` / `sdkfit corpus` CLI
 are shipped.**
-`src/tenon/detect/` diffs two OpenAPI 3.x documents — and two MCP `tools/list` documents — into typed
-`Change` records; `src/tenon/locate/` turns one of those records into call sites with file, line and
+`src/sdkfit/detect/` diffs two OpenAPI 3.x documents — and two MCP `tools/list` documents — into typed
+`Change` records; `src/sdkfit/locate/` turns one of those records into call sites with file, line and
 column, and keeps anything it cannot prove in a separate ambiguity list — Python via `ast`,
 TypeScript/JavaScript, Rust, Go and C# via tree-sitter, and MCP `call_tool` sites via `locate_mcp`; no
-Node, Rust, Go or .NET analysis runtime; `src/tenon/propose/` turns the certain sites into a candidate
+Node, Rust, Go or .NET analysis runtime; `src/sdkfit/propose/` turns the certain sites into a candidate
 diff and never applies it;
-`src/tenon/prove/` applies that diff to a copy and runs every configured proof stage before and
+`src/sdkfit/prove/` applies that diff to a copy and runs every configured proof stage before and
 after, recording the strongest level that actually passed (`TESTS_PASSED`, `CHARACTERIZED`,
-`REPLAYED`, `TYPES_BUILD_ONLY`) or `UNVERIFIED` with a reason; `src/tenon/pr/` renders a
+`REPLAYED`, `TYPES_BUILD_ONLY`) or `UNVERIFIED` with a reason; `src/sdkfit/pr/` renders a
 deterministic PR whose title and body state that level, then clones a clean checkout, commits the
 exact diff to a new branch and opens the PR through your own `git` and `gh` or a GitHub App
-installation (`--remote app`); `src/tenon/provider/` loads a portable migration bundle and
-`src/tenon/cli/` runs it through the same pipeline; `src/tenon/service/` queues one bundle in SQLite,
-runs the installed fan-out with a bounded worker pool and serves a bearer-token API; `src/tenon/probe/`
+installation (`--remote app`); `src/sdkfit/provider/` loads a portable migration bundle and
+`src/sdkfit/cli/` runs it through the same pipeline; `src/sdkfit/service/` queues one bundle in SQLite,
+runs the installed fan-out with a bounded worker pool and serves a bearer-token API; `src/sdkfit/probe/`
 connects to an MCP server over stdio, runs tasks through a user-supplied agent and reports what
-worked; `src/tenon/corpus/` records `(change, patch, proof, outcome)` runs and reports by
+worked; `src/sdkfit/corpus/` records `(change, patch, proof, outcome)` runs and reports by
 level/outcome. The analysis and proof run fully offline; only the final push and PR call touch a
 remote. Read `CLAUDE.md` before writing any code here.
 
 ## CLI
 
 ```sh
-uv run tenon check path/to/repo --old v1.yaml --new v2.yaml
-uv run tenon check path/to/ts-repo --old v1.yaml --new v2.yaml --language ts
-uv run tenon check path/to/rust-repo --old v1.yaml --new v2.yaml --language rust
-uv run tenon check path/to/go-repo --old v1.yaml --new v2.yaml --language go \
+uv run sdkfit check path/to/repo --old v1.yaml --new v2.yaml
+uv run sdkfit check path/to/ts-repo --old v1.yaml --new v2.yaml --language ts
+uv run sdkfit check path/to/rust-repo --old v1.yaml --new v2.yaml --language rust
+uv run sdkfit check path/to/go-repo --old v1.yaml --new v2.yaml --language go \
     --sdk-package github.com/stripe/stripe-go/v76 --package-name stripe
-uv run tenon check path/to/csharp-repo --old v1.yaml --new v2.yaml \
+uv run sdkfit check path/to/csharp-repo --old v1.yaml --new v2.yaml \
     --language csharp --sdk-package Stripe
-uv run tenon check path/to/ts-repo --old v1.yaml --new v2.yaml --language ts \
+uv run sdkfit check path/to/ts-repo --old v1.yaml --new v2.yaml --language ts \
     --receiver "StripeClient.create=Client"
-uv run tenon fix path/to/repo --old v1.yaml --new v2.yaml \
+uv run sdkfit fix path/to/repo --old v1.yaml --new v2.yaml \
     --check "python -m pytest -q"
-uv run tenon fix path/to/no-test-repo --old v1.yaml --new v2.yaml \
+uv run sdkfit fix path/to/no-test-repo --old v1.yaml --new v2.yaml \
     --build "python -m compileall -q ." --require TYPES_BUILD_ONLY
-uv run tenon check path/to/mcp-repo --source mcp \
+uv run sdkfit check path/to/mcp-repo --source mcp \
     --old tools-v1.json --new tools-v2.json
-uv run tenon provider migrate path/to/customer-repo \
+uv run sdkfit provider migrate path/to/customer-repo \
     --bundle stripe-v2500-v2596.json --open-pr --remote app
-uv run tenon provider migrate --repos repos.txt \
+uv run sdkfit provider migrate --repos repos.txt \
     --bundle stripe-v2500-v2596.json --open-pr --remote app
-uv run tenon provider migrate --installed \
+uv run sdkfit provider migrate --installed \
     --bundle stripe-v2500-v2596.json --open-pr --remote app
-uv run tenon provider serve --bundles ./bundles --db ./tenon.db \
-    --api-token "$TENON_API_TOKEN" --app-id 123 \
+uv run sdkfit provider serve --bundles ./bundles --db ./sdkfit.db \
+    --api-token "$SDKFIT_API_TOKEN" --app-id 123 \
     --app-installation-id 456 --app-private-key app.pem
-uv run tenon probe \
+uv run sdkfit probe \
     --server-cmd "python server.py" --tasks tasks.json --agent "python agent.py"
-uv run tenon corpus report --corpus docs/benchmark/corpus.jsonl
+uv run sdkfit corpus report --corpus docs/benchmark/corpus.jsonl
 ```
 
 `check` exits 0 when no affected site exists and 1 when one does; `fix` prints the diff and the proof,
@@ -100,11 +100,11 @@ queues that installed run over HTTP. `probe` starts a local MCP
 server over stdio, runs the task file through your agent command and reports what worked (exit 0 all
 tasks, 1 a failed task, 2 usage/connection).
 `corpus` records a `fix --json` run, updates a human outcome and reports by level/outcome. `--json`
-is byte-stable. Repeated inputs can live in `tenon.toml` under `[locate]` (`source`, `language`,
-`sdk_package`, `package_name`, mappings) and `[tenon]`; probe/corpus use flags only. `language` is
+is byte-stable. Repeated inputs can live in `sdkfit.toml` under `[locate]` (`source`, `language`,
+`sdk_package`, `package_name`, mappings) and `[sdkfit]`; probe/corpus use flags only. `language` is
 `python`, `ts`, `rust`, `go` or `csharp`; `source = "mcp"` remains Python-only.
 
-`--language rust` scans `.rs` files with tree-sitter and needs no Rust toolchain. In `tenon.toml`,
+`--language rust` scans `.rs` files with tree-sitter and needs no Rust toolchain. In `sdkfit.toml`,
 `[locate] sdk_package` is the crate name as written in `use` (for example `stripe`), and the shared
 `[locate.operations]`/`[locate.fields]` tables map the spec to Rust chains, e.g.
 `"POST /v1/charges" = "Charge.create"` and `"Charge.amount" = "amount_cents"`. Supported shapes are
@@ -135,7 +135,7 @@ does the same from the CLI (the key may omit the root package). Limits: method c
 value, dot imports, reflection, and multi-hop data flow are not followed; they report no site rather
 than a guessed one. `fix` follows the same proposer rule as Rust.
 
-`--language csharp` scans `.cs` files with tree-sitter and needs no .NET toolchain. In `tenon.toml`,
+`--language csharp` scans `.cs` files with tree-sitter and needs no .NET toolchain. In `sdkfit.toml`,
 `[locate] sdk_package` is the C# **namespace root** (for example `Stripe`): root usings, subnamespace
 usings and aliases root the simple type name, and the canonical chain drops the namespace and
 subnamespace (`Stripe.Services.ChargeService` -> `ChargeService`). Supported shapes are `using`
@@ -169,11 +169,11 @@ function/arrow/closure inherit the enclosing bindings; a duplicate name is ambig
 imported from another package stays unrooted. See each language's limits above.
 
 ```python
-from tenon.detect import diff, load
-from tenon.locate import LocateConfig, locate
-from tenon.pr import GitGhRemote, write_pr
-from tenon.propose import propose
-from tenon.prove import prove
+from sdkfit.detect import diff, load
+from sdkfit.locate import LocateConfig, locate
+from sdkfit.pr import GitGhRemote, write_pr
+from sdkfit.propose import propose
+from sdkfit.prove import prove
 
 changes = diff(load("v1.yaml"), load("v2.yaml")).changes
 for change in changes:
@@ -181,7 +181,7 @@ for change in changes:
     proposal = propose(change, located, "path/to/repo")
     result = prove(proposal, "path/to/repo", ["python", "-m", "pytest", "-q"])
     result.level      # TESTS_PASSED, or UNVERIFIED with a cause
-    proposal.skipped  # what Tenon refused to touch, and why
+    proposal.skipped  # what SDK Fit refused to touch, and why
     pr = write_pr(proposal, result, "path/to/repo", remote=GitGhRemote())
     pr.url            # the PR, when OPENED
     pr.refusal        # DIRTY_CHECKOUT, DEFAULT_BRANCH, ... when REFUSED
@@ -189,29 +189,29 @@ for change in changes:
 
 ### GitHub App remote
 
-`tenon fix ... --open-pr --remote app` opens the PR as a GitHub App instead of through `gh`. The app
+`sdkfit fix ... --open-pr --remote app` opens the PR as a GitHub App instead of through `gh`. The app
 needs `contents:write` and `pull_requests:write` permissions and must be installed on the repository.
 The inputs are flags or environment variables; a flag wins:
 
 | Flag | Environment |
 |---|---|
-| `--app-id` | `TENON_GITHUB_APP_ID` |
-| `--app-installation-id` | `TENON_GITHUB_APP_INSTALLATION_ID` |
-| `--app-private-key PATH` | `TENON_GITHUB_APP_PRIVATE_KEY` (a path) |
-| `--api-url URL` | `TENON_GITHUB_API_URL` |
+| `--app-id` | `SDKFIT_GITHUB_APP_ID` |
+| `--app-installation-id` | `SDKFIT_GITHUB_APP_INSTALLATION_ID` |
+| `--app-private-key PATH` | `SDKFIT_GITHUB_APP_PRIVATE_KEY` (a path) |
+| `--api-url URL` | `SDKFIT_GITHUB_API_URL` |
 
 The private key is read from a path; key content is never read from the environment. `--remote`
 requires `--open-pr`, and `--remote gh` (the default) keeps the existing `gh` path. The app remote is
 self-hosted: the service ships with a Docker Compose + Caddy deployment (`docs/technical/DEPLOYMENT.md`),
 while `--installed` uses the same app identity for discovery
-and cloning and `tenon provider serve` exposes the installed fan-out as a local service. `--api-url`
+and cloning and `sdkfit provider serve` exposes the installed fan-out as a local service. `--api-url`
 also targets a self-hosted GitHub Enterprise endpoint.
 
 ### Provider migration bundle
 
 A provider can package one migration as a JSON bundle and run it against one local checkout, a list
 of checkouts or the app installation with
-`tenon provider migrate [<repo>|--repos FILE|--installed] --bundle PATH`. The bundle names the
+`sdkfit provider migrate [<repo>|--repos FILE|--installed] --bundle PATH`. The bundle names the
 provider and migration, the source and language (`python`, `ts`, `rust`, `go` or `csharp`), the two
 spec files (resolved relative to the bundle), the locate config, the required proof level and the
 optional stage commands:
@@ -243,7 +243,7 @@ import-root `sdk_package`; other languages ignore `package_name`. A C# bundle se
 `"language": "csharp"` and puts the namespace root in `locate.sdk_package` (for example `Stripe`);
 `source = "mcp"` remains Python-only for bundles too.
 
-`tenon provider migrate <repo> --bundle PATH [--open-pr] [--remote gh|app] [--app-id ID]
+`sdkfit provider migrate <repo> --bundle PATH [--open-pr] [--remote gh|app] [--app-id ID]
 [--app-installation-id ID] [--app-private-key PATH] [--api-url URL] [--check CMD]
 [--require LEVEL] [--allow-below-required] [--allow-unverified] [--json]` builds the same
 `CliConfig` as `fix`, applies `--check`/`--require` over the bundle and runs the same detect →
@@ -258,7 +258,7 @@ repos file is UTF-8 text with one local path per line; blank lines and lines who
 starts with `#` are ignored, `~` is expanded and relative paths resolve against the file's parent. A
 missing or unreadable file, a non-file, or an empty list exits 2.
 
-`tenon provider migrate --repos FILE --bundle PATH` runs the bundle once per listed checkout. The
+`sdkfit provider migrate --repos FILE --bundle PATH` runs the bundle once per listed checkout. The
 bundle and its `CliConfig` are loaded once, so `--check`/`--require` apply to every repo; when
 `--open-pr` is set the selected gh/app remote is constructed once and reused for one PR per repo.
 Repos run sequentially in file order. A listed path that is not a directory is a per-repo
@@ -269,9 +269,9 @@ Repos run sequentially in file order. A listed path that is not a directory is a
 when every repo meets the requirement and every requested PR opened, 1 when any repo failed, and 2
 on usage/bundle/repos-file/global spec/config errors (a shared spec refusal aborts the whole run).
 
-`tenon provider migrate --installed --bundle PATH` discovers the app installation's non-archived
+`sdkfit provider migrate --installed --bundle PATH` discovers the app installation's non-archived
 repositories through `GET /installation/repositories` (paginated, API order) and runs the bundle
-over them. It uses the app identity above from flags or `TENON_GITHUB_APP_*`/`TENON_GITHUB_API_URL`;
+over them. It uses the app identity above from flags or `SDKFIT_GITHUB_APP_*`/`SDKFIT_GITHUB_API_URL`;
 missing inputs or an unreadable key exit 2. `--remote gh` is rejected (`--installed requires
 --remote app`), and `--remote` is otherwise only meaningful with `--open-pr`. The installation token
 is minted once and shared by discovery, every clone and, under `--open-pr`, one `GitHubAppRemote`
@@ -284,26 +284,26 @@ report, summary and exits are the `--repos` fan-out's, with `repo` = `owner/name
 
 The fan-out has no rollback: earlier repos may already have branches or PRs when a later repo fails,
 and the report names every repo. It is sequential and mints one app token per run; parallelism,
-retries, repo filtering and a provider note in the PR body are deferred. `tenon provider serve`
+retries, repo filtering and a provider note in the PR body are deferred. `sdkfit provider serve`
 wraps the installed fan-out in a local service; its own limits are below.
 The bundle and repos file are trusted operator input, not a sandbox: their stage commands run as
 given.
 
 ### Provider service
 
-`tenon provider serve --bundles DIR (--db PATH | --database-url URL) --api-token TOKEN
+`sdkfit provider serve --bundles DIR (--db PATH | --database-url URL) --api-token TOKEN
 [--webhook-secret SECRET] [--trigger EVENT[.ACTION]=BUNDLE ...] [--host 127.0.0.1] [--port 8080]
 [--run-timeout 3600] [--poll 1.0] [--workers N] [--retries N] [--dry-run] [--app-id ID]
 [--app-installation-id ID] [--app-private-key PATH] [--api-url URL]` starts a self-hosted HTTP
 service and N background workers (default 1, max 16).
-`--api-token`/`TENON_API_TOKEN` is required and non-empty, `--bundles` must be an existing directory,
+`--api-token`/`SDKFIT_API_TOKEN` is required and non-empty, `--bundles` must be an existing directory,
 and exactly one of `--db` (the SQLite store, created and migrated on open) or
-`--database-url`/`TENON_DATABASE_URL` (the Postgres store; install `tenonhq[postgres]`) is required;
+`--database-url`/`SDKFIT_DATABASE_URL` (the Postgres store; install `sdkfit[postgres]`) is required;
 a bad value or an out-of-bounds `--workers` (1..16) or `--retries` (0..10) is a named usage error
 (exit 2). The Postgres queue claims rows with `FOR UPDATE SKIP LOCKED`, so several replicas can share
 it. For a Kubernetes deployment (TLS, rate limits, HPA, Postgres) see
 `docs/technical/CLOUD.md`.
-`--webhook-secret`/`TENON_WEBHOOK_SECRET` is optional. `--dry-run` runs the installed fan-out with no
+`--webhook-secret`/`SDKFIT_WEBHOOK_SECRET` is optional. `--dry-run` runs the installed fan-out with no
 PR call. The app identity is the T10a one; the child receives the private key path, never its
 contents.
 
@@ -321,8 +321,8 @@ and auth failures are 401 with `WWW-Authenticate: Bearer`.
 process group (SIGTERM, then SIGKILL after five seconds), so its git children die with it. An unknown
 id is 404; a run that is already succeeded, failed or cancelled is 409 `{"error":"run is
 <status>","status":...}`. `GET /metrics` (bearer) returns Prometheus text with
-`tenon_runs{status="queued|running|succeeded|failed|cancelled"} N` for every status and
-`tenon_workers N`, as `text/plain; version=0.0.4; charset=utf-8`.
+`sdkfit_runs{status="queued|running|succeeded|failed|cancelled"} N` for every status and
+`sdkfit_workers N`, as `text/plain; version=0.0.4; charset=utf-8`.
 
 `POST /webhooks/github` is exempt from the bearer token but requires `--webhook-secret`; without one
 the route is 404. It verifies `X-Hub-Signature-256: sha256=<hex>` with HMAC-SHA256 in constant time
@@ -362,8 +362,8 @@ The container + Caddy stack and the operator guide are in
 MCP `tools/list` documents use the same records:
 
 ```python
-from tenon.detect import diff_mcp, load_mcp
-from tenon.locate import McpLocateConfig, locate_mcp
+from sdkfit.detect import diff_mcp, load_mcp
+from sdkfit.locate import McpLocateConfig, locate_mcp
 
 changes = diff_mcp(
     load_mcp("tools-v1.json"),
@@ -375,7 +375,7 @@ site = locate_mcp(changes[0], "path/to/repo", McpLocateConfig(client_package="mc
 site.certain        # call_tool("name", {"amount": ...}) keys, rooted in ClientSession
 ```
 
-`tenon check --source mcp` and `tenon fix --source mcp` use the same MCP diff and locator. The
+`sdkfit check --source mcp` and `sdkfit fix --source mcp` use the same MCP diff and locator. The
 Python locator covers the high-level `ClientSession.call_tool` pattern; TypeScript and low-level
 `send_request` calls are follow-ups.
 
@@ -386,21 +386,21 @@ cases are `local_only`/`TESTS_PASSED`; no merge outcome exists yet, so the repor
 rate.
 
 ```sh
-uv run tenon corpus report --corpus docs/benchmark/corpus.jsonl
+uv run sdkfit corpus report --corpus docs/benchmark/corpus.jsonl
 ```
 
-A run enters with `tenon corpus record --from fix.json ...`; a human outcome is added with
-`tenon corpus outcome <id> merged --outcome-url <pr>`. The corpus is local and opt-in; nothing is
+A run enters with `sdkfit corpus record --from fix.json ...`; a human outcome is added with
+`sdkfit corpus outcome <id> merged --outcome-url <pr>`. The corpus is local and opt-in; nothing is
 uploaded.
 
-## What Tenon is
+## What SDK Fit is
 
 Two modes sharing one run-and-verify core:
 
-- **Upgrade (lead):** a vendor changes an API. Tenon reads the change from a machine-readable
+- **Upgrade (lead):** a vendor changes an API. SDK Fit reads the change from a machine-readable
   source (OpenAPI diff first), finds the affected calls in your repo, proposes a patch, and runs
   your checks. The PR says which proof level it reached.
-- **Probe (second):** point Tenon at an MCP server (`tenon probe`), run tasks through your own agent
+- **Probe (second):** point SDK Fit at an MCP server (`sdkfit probe`), run tasks through your own agent
   command, and see which tools an agent could actually use. No model ships; the report is an
   observation, not a proof level.
 
@@ -409,7 +409,7 @@ Two modes sharing one run-and-verify core:
 | Level | Meaning |
 |---|---|
 | `TESTS_PASSED` | Your tests pass after the patch |
-| `CHARACTERIZED` | Your characterization command passes before and after (Tenon does not generate it) |
+| `CHARACTERIZED` | Your characterization command passes before and after (SDK Fit does not generate it) |
 | `REPLAYED` | Your recorded-call replay passes before and after (you supply the recording) |
 | `TYPES_BUILD_ONLY` | Your build/type-check passes before and after, nothing more (weak, labelled) |
 | `UNVERIFIED` | No acceptable proof ran |
@@ -424,7 +424,7 @@ Languages: Python, TypeScript/JavaScript, Rust, Go and C# shipped. Change source
 and MCP tools/list diffs, with the Python MCP tool-call locator; SDK metadata later. Consumer side
 first; the provider bundle (T10b) packages that run for one repo, local fan-out over a repos file
 (T10c) and installed fan-out through the app (T10d) run it across checkouts, and the local
-`tenon provider serve` (T10e) queues the installed run, and a Docker Compose + Caddy deployment
+`sdkfit provider serve` (T10e) queues the installed run, and a Docker Compose + Caddy deployment
 (T13a) runs it behind TLS; resilience (T13b) is later.
 
 ## Docs

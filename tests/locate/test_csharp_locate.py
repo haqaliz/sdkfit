@@ -1,7 +1,7 @@
 """The public C# locate API over temp ``.cs`` repositories."""
 
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import (
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import (
     AmbiguityReason,
     CSharpLocateConfig,
     LocateReason,
@@ -401,7 +401,7 @@ def test_a_mapped_receiver_property_is_certain(tmp_path):
 
 # Spec AC1/M3: the C# config and wrapper are part of the public surface.
 def test_the_csharp_api_is_exported():
-    import tenon.locate as locate
+    import sdkfit.locate as locate
 
     assert locate.CSharpLocateConfig is CSharpLocateConfig
     assert locate.locate_csharp is locate_csharp

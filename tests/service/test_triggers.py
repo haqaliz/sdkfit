@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tenon.service.triggers import Trigger, parse_trigger, parse_triggers
+from sdkfit.service.triggers import Trigger, parse_trigger, parse_triggers
 
 
 def a_bundles(tmp_path):

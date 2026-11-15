@@ -5,11 +5,11 @@ from typing import get_type_hints
 
 import pytest
 
-import tenon.locate.query as query_module
-import tenon.locate.resolve as resolve_module
-from tenon.detect import Change, ChangeKind, Location
-from tenon.locate import LocateConfig, TsLocateConfig, derive
-from tenon.locate.query import QueryConfig
+import sdkfit.locate.query as query_module
+import sdkfit.locate.resolve as resolve_module
+from sdkfit.detect import Change, ChangeKind, Location
+from sdkfit.locate import LocateConfig, TsLocateConfig, derive
+from sdkfit.locate.query import QueryConfig
 
 CHARGE_PROPERTIES = "#/components/schemas/Charge/properties"
 CHARGES_BODY = (

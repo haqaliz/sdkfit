@@ -7,7 +7,7 @@ VERSION="0.4.0"
 
 uv sync --frozen
 uv run pytest
-uv run tenon --version | grep -qx "tenon ${VERSION}"
+uv run sdkfit --version | grep -qx "sdkfit ${VERSION}"
 
 rm -rf dist
 uv build
@@ -15,8 +15,8 @@ uv build
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 uv venv "$tmp/venv"
-uv pip install --python "$tmp/venv/bin/python" --quiet dist/tenonhq-*.whl
-"$tmp/venv/bin/tenon" --version | grep -qx "tenon ${VERSION}"
-"$tmp/venv/bin/tenon" check --help >/dev/null
+uv pip install --python "$tmp/venv/bin/python" --quiet dist/sdkfit-*.whl
+"$tmp/venv/bin/sdkfit" --version | grep -qx "sdkfit ${VERSION}"
+"$tmp/venv/bin/sdkfit" check --help >/dev/null
 
-echo "release check ok: tenon ${VERSION}"
+echo "release check ok: sdkfit ${VERSION}"

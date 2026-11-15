@@ -1,14 +1,14 @@
-# Tenon: Architecture
+# SDK Fit: Architecture
 
 Design intent. **T1 (detect), T2 (locate, Python), T3 (propose), T4 (prove), T5 (PR), T6
 (locate, TypeScript/JavaScript), T7 (proof ladder), T8a (MCP tool-schema diffs), T8b (Python MCP
-tool-call locator), T8c (`tenon probe`), T9 (benchmark corpus), T10a (GitHub App remote), T10b
+tool-call locator), T8c (`sdkfit probe`), T9 (benchmark corpus), T10a (GitHub App remote), T10b
 (provider migration bundle), T10c (local provider fan-out), T10d (installed provider fan-out), T10e
 (hosted provider service), T11a (locate, Rust), T11b (locate, Go), T11c (locate, C#) and the
-`tenon check` / `tenon fix` / `tenon provider migrate` / `tenon provider serve` / `tenon probe` /
-`tenon corpus` CLI are implemented** under `src/tenon/detect/`, `src/tenon/locate/`,
-`src/tenon/propose/`, `src/tenon/prove/`, `src/tenon/pr/`, `src/tenon/provider/`,
-`src/tenon/service/`, `src/tenon/probe/`, `src/tenon/corpus/` and `src/tenon/cli/`. The later
+`sdkfit check` / `sdkfit fix` / `sdkfit provider migrate` / `sdkfit provider serve` / `sdkfit probe` /
+`sdkfit corpus` CLI are implemented** under `src/sdkfit/detect/`, `src/sdkfit/locate/`,
+`src/sdkfit/propose/`, `src/sdkfit/prove/`, `src/sdkfit/pr/`, `src/sdkfit/provider/`,
+`src/sdkfit/service/`, `src/sdkfit/probe/`, `src/sdkfit/corpus/` and `src/sdkfit/cli/`. The later
 stages are not.
 
 ## Pipeline
@@ -35,7 +35,7 @@ API change source (OpenAPI v1 -> v2 | MCP schema | SDK metadata)
 ## Layout
 
 ```text
-src/tenon/
+src/sdkfit/
   detect/     T1/T8a: spec parsers, differ, Change records <- built (OpenAPI + MCP)
   locate/     T2/T6/T8b/T11a/T11b/T11c: per-language finders <- built
               (Python + TS/JS + Rust + Go + C# + MCP)
@@ -46,7 +46,7 @@ src/tenon/
   service/    T10e: SQLite queue, runner, worker, API       <- built (HTTP + SQLite)
   probe/      T8c: MCP stdio probe, agent plan, report  <- built (tools only)
   corpus/     T9: benchmark records                         <- built (JSONL + report)
-  cli/        tenon check | fix | provider migrate | provider serve | probe | corpus <- built
+  cli/        sdkfit check | fix | provider migrate | provider serve | probe | corpus <- built
 tests/        offline; fixture repos and specs; no network, no model calls
 ```
 
@@ -82,20 +82,20 @@ tests/        offline; fixture repos and specs; no network, no model calls
   stronger level satisfies a weaker requirement. If the required level cannot be reached, the result
   is a flagged suggestion or an opted-in draft, not a verified PR.
 - **Isolated working copy and clone.** T4 patches a copy; T5 clones the clean checkout to a temporary
-  directory and commits there. The user's checkout is never modified or given a Tenon branch.
+  directory and commits there. The user's checkout is never modified or given a SDK Fit branch.
 - **The PR is a seam, not a merge.** T5 renders a deterministic draft, pushes only the new branch and
   opens the PR through `GitGhRemote` (`git` + `gh`). It never force-pushes, never pushes the base
   branch and has no merge path. A result at or above the required level opens a normal PR; below it
   is `BELOW_REQUIRED_LEVEL` or, with explicit opt-in, a draft; `UNVERIFIED` is always a draft.
 - **Probe is a readiness observation, not proof.** T8c starts a local MCP server over stdio, lists
   its tools, runs user tasks through a user-supplied `--agent` command (JSON request in, JSON plan
-  out), executes the plan itself and reports what worked. No model ships; Tenon makes no network
+  out), executes the plan itself and reports what worked. No model ships; SDK Fit makes no network
   call; the report says "worked in this run", never "verified".
 - **The GitHub App is a host adapter, not a new pipeline.** T10a implements the same `Remote` protocol
   with an installation token; T5's clone/commit/push/PR guardrails and no-merge stance are unchanged.
   The token is kept out of argv, the remote URL and error details; the app is self-hosted.
 - **The bundle is config, not a new pipeline.** T10b serializes the provider-side `CliConfig`
-  (identity, spec paths, locate, require, stage commands) and `tenon provider migrate` loads it into
+  (identity, spec paths, locate, require, stage commands) and `sdkfit provider migrate` loads it into
   the same detect → locate → propose → prove → optional PR flow. T10c adds a local repos file
   and runs that flow sequentially once per listed checkout, reusing one bundle/config and one PR
   remote; a bad path is a per-repo failure, a shared spec refusal aborts, and there is no rollback.
@@ -121,8 +121,8 @@ tests/        offline; fixture repos and specs; no network, no model calls
   `NO_TESTS_FOUND`, `TESTS_FAILED_BEFORE`, `TESTS_FAILED_AFTER`, `BUILD_FAILED_BEFORE`,
   `BUILD_FAILED_AFTER`, `CHARACTERIZE_FAILED_BEFORE`, `CHARACTERIZE_FAILED_AFTER`,
   `REPLAY_FAILED_BEFORE`, `REPLAY_FAILED_AFTER`, `CHECK_TIMED_OUT`, `COPY_FAILED`.
-- **A thin CLI with honest exit codes.** `tenon check`, `tenon fix`, `tenon provider migrate` and
-  `tenon provider serve` parse, configure, compose and render; they add no detection or proof logic.
+- **A thin CLI with honest exit codes.** `sdkfit check`, `sdkfit fix`, `sdkfit provider migrate` and
+  `sdkfit provider serve` parse, configure, compose and render; they add no detection or proof logic.
   `check` exits 0 clean /
   1 affected or unanalyzable / 2 usage; `fix` exits 0 required proof / 1 not / 2 usage.
   `provider migrate` exits 0 every repo passed / 1 any repo failed / 2 usage, bundle, repos-file,
@@ -135,10 +135,10 @@ tests/        offline; fixture repos and specs; no network, no model calls
 
 ## CLI
 
-`tenon check <repo> --old SPEC --new SPEC [--source openapi|mcp] [--language python|ts|rust|go|csharp]
+`sdkfit check <repo> --old SPEC --new SPEC [--source openapi|mcp] [--language python|ts|rust|go|csharp]
 [--package-name NAME] [--json]` lists affected call sites and exits 0 when clean, 1 when a site or
 an unanalyzable repository is found.
-`tenon fix <repo> --old SPEC --new SPEC [--source openapi|mcp] [--language python|ts|rust|go|csharp]
+`sdkfit fix <repo> --old SPEC --new SPEC [--source openapi|mcp] [--language python|ts|rust|go|csharp]
 [--package-name NAME] [--build CMD] [--characterize CMD] [--replay CMD] [--check CMD]
 [--require LEVEL] [--allow-below-required]
 [--open-pr] [--remote gh|app] [--app-id ID] [--app-installation-id ID] [--app-private-key PATH]
@@ -146,12 +146,12 @@ an unanalyzable repository is found.
 is one of the five proof levels; the strongest configured stage that is green is the result.
 `--open-pr --remote app` builds `GitHubAppRemote`/`GitHubAppToken` instead of `GitGhRemote`; the app
 needs `contents:write` and `pull_requests:write`. Its inputs come from those flags or
-`TENON_GITHUB_APP_ID`, `TENON_GITHUB_APP_INSTALLATION_ID`, `TENON_GITHUB_APP_PRIVATE_KEY` (a path)
-and `TENON_GITHUB_API_URL`; a flag wins. An explicit `--remote` requires `--open-pr`; missing inputs
+`SDKFIT_GITHUB_APP_ID`, `SDKFIT_GITHUB_APP_INSTALLATION_ID`, `SDKFIT_GITHUB_APP_PRIVATE_KEY` (a path)
+and `SDKFIT_GITHUB_API_URL`; a flag wins. An explicit `--remote` requires `--open-pr`; missing inputs
 or an unreadable key exit 2. The app remote is self-hosted: a deployment is deferred;
-`--installed` reuses the same app identity for discovery and cloning and `tenon provider serve`
+`--installed` reuses the same app identity for discovery and cloning and `sdkfit provider serve`
 serves that installed fan-out locally.
-`tenon provider migrate [<repo>|--repos FILE|--installed] --bundle PATH [--open-pr] [--remote gh|app]
+`sdkfit provider migrate [<repo>|--repos FILE|--installed] --bundle PATH [--open-pr] [--remote gh|app]
 [--app-id ID] [--app-installation-id ID] [--app-private-key PATH] [--api-url URL] [--check CMD]
 [--require LEVEL] [--allow-below-required] [--allow-unverified] [--json]` builds the `CliConfig`
 from a JSON migration bundle (provider/migration, source/language, relative spec paths, locate
@@ -178,7 +178,7 @@ missing input or unreadable key exits 2, and `--remote gh` is rejected (`--insta
 child env, never argv/URL) that is removed even on failure; without `--open-pr` no PR call is made
 (dry run). A clone failure is a per-repo `error` and the others still run; a token/list failure
 exits 2. The report keys are `owner/name`. There is no rollback, parallelism or retry.
-`tenon provider serve --bundles DIR --db PATH --api-token TOKEN [--webhook-secret SECRET]
+`sdkfit provider serve --bundles DIR --db PATH --api-token TOKEN [--webhook-secret SECRET]
 [--host 127.0.0.1] [--port 8080] [--run-timeout SEC] [--poll SEC] [--workers N] [--retries N]
 [--dry-run] [--app-id ID] [--app-installation-id ID] [--app-private-key PATH] [--api-url URL]`
 starts a stdlib HTTP server and N workers (1..16, default 1) after re-queueing runs stranded
@@ -186,23 +186,23 @@ starts a stdlib HTTP server and N workers (1..16, default 1) after re-queueing r
 and returns 201, or the existing run with an `Idempotency-Key` (200); `GET /runs/{id}` and
 `GET /runs?limit=N` return the durable record/report; `POST /runs/{id}/cancel` cancels a queued run
 or flags a running one (202), with 404 unknown and 409 terminal; `GET /metrics` (bearer) returns the
-five `tenon_runs` status gauges and `tenon_workers`; `GET /health` is public; `POST
+five `sdkfit_runs` status gauges and `sdkfit_workers`; `GET /health` is public; `POST
 /webhooks/github` verifies the HMAC and records a delivery (no auto-run). Auth is
 `hmac.compare_digest`, the token/secret are never stored or logged, and each worker invokes the
 shipped installed fan-out once per claimed run. A report-bearing run is terminal; a report-free
 failure retries up to `--retries` times, and a cancel stops the CLI's process group. SQLite is the
 queue, and the service is not internet-hardened: no TLS, proxy or rate limit ships.
-`tenon probe --server-cmd CMD --tasks FILE --agent CMD [--timeout SEC] [--json]` starts an MCP
+`sdkfit probe --server-cmd CMD --tasks FILE --agent CMD [--timeout SEC] [--json]` starts an MCP
 server over stdio, lists its tools, runs every task through the agent command and reports what
 worked. Exit 0 when every task passed, 1 when one failed, 2 on usage/connection. The task file and
 agent contract are documented in `docs/planning/mcp-probe/prd.md`.
 
-`tenon corpus record --from FIX_JSON --repo URL --commit SHA --outcome STATUS --date YYYY-MM-DD
---corpus PATH` appends records; `tenon corpus outcome` updates a human outcome; `tenon corpus
+`sdkfit corpus record --from FIX_JSON --repo URL --commit SHA --outcome STATUS --date YYYY-MM-DD
+--corpus PATH` appends records; `sdkfit corpus outcome` updates a human outcome; `sdkfit corpus
 report` prints the level/outcome table and merge rate. `docs/benchmark/` holds the public seed.
 
-`tenon.toml` provides `[locate]` (`source`, `language`, `sdk_package`, `package_name`, mappings) and
-`[tenon]` defaults; flags override. Exit 2 on usage or bad input. Never a traceback. `language` is
+`sdkfit.toml` provides `[locate]` (`source`, `language`, `sdk_package`, `package_name`, mappings) and
+`[sdkfit]` defaults; flags override. Exit 2 on usage or bad input. Never a traceback. `language` is
 `python`, `ts`, `rust`, `go` or `csharp`; for Rust, `sdk_package` is one crate identifier as written
 in `use` (for example `stripe`); for Go it is the import root (for example
 `github.com/stripe/stripe-go/v76`) and `package_name` optionally overrides the root import's package
@@ -258,7 +258,7 @@ test"` is just a user command.
 - T8 probe follow-ups: HTTP/SSE transport, an OpenAPI/API probe, resources/prompts,
   sampling/roots/elicitation, and `--stop-on-error`. The shipped probe is stdio/tools only and runs
   the user's local server/agent without a sandbox.
-- T9 follow-ups: GitHub merge/incident detection, `tenon fix --corpus` auto-record, and a hosted
+- T9 follow-ups: GitHub merge/incident detection, `sdkfit fix --corpus` auto-record, and a hosted
   public benchmark (T10). The shipped corpus is local/opt-in and its public seed has no merge
   outcomes yet.
 - T5 follow-ups: fork remotes, cleanup of a branch left by a failed PR call, and submodule/LFS
@@ -266,13 +266,13 @@ test"` is just a user command.
 - T10e follow-ups: webhook-triggered runs shipped as T10f; per-run retries/backoff remain. The
   shipped service is containerized (T13a) with N workers, bounded retries, cancel, metrics and SQLite
   WAL/recovery (T13b); rate limiting stays a proxy concern.
-- PyPI distribution name: `tenon` is taken; `tenonhq` was free when checked.
+- PyPI distribution name: `sdkfit` is free (checked 2026-11-16).
 - Phase 3: T10a (GitHub App remote), T10b (provider migration bundle), T10c (local provider
   fan-out), T10d (installed provider fan-out), T10e (hosted provider service), T11a (Rust locator),
   T11b (Go locator) and T11c (C# locator) shipped; T12a (Rust/Go receiver tracking), T12b
   (C#/Python/TS receiver tracking), T12c (annotated return-type inference), T12d (typed-parameter
   inference) and T12e (cross-file signatures and closures) shipped; T13a (deployable service),
-  T13b (resilience), T14 (CI and release pipeline), T15 (Postgres store + Kubernetes manifests) and
-  T16 (launch readiness) shipped; T10f (webhook-triggered runs) shipped. Repo-wide cross-package indexes are not started.
-  v0.1.0 was the first tagged release (2026-11-13); v0.2.0 shipped 2026-11-14; v0.3.0 shipped
-  2026-11-15; v0.4.0 shipped 2026-11-16.
+  T13b (resilience), T14 (CI and release pipeline), T15 (Postgres store + Kubernetes manifests),
+  T16 (launch readiness) and T17 (rename to SDK Fit) shipped; T10f (webhook-triggered runs) shipped.
+  Repo-wide cross-package indexes are not started. v0.1.0 was the first tagged release
+  (2026-11-13); v0.2.0 shipped 2026-11-14; v0.3.0 shipped 2026-11-15; v0.4.0 shipped 2026-11-16.
