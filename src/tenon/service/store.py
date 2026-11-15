@@ -387,7 +387,8 @@ class RunStore:
     def ping(self) -> bool:
         with self._lock:
             try:
-                self._connection.execute("SELECT 1")
+                # A schema read, not just the connection: a corrupt file must fail.
+                self._connection.execute("SELECT 1 FROM runs LIMIT 1").fetchall()
             except sqlite3.Error:
                 return False
         return True

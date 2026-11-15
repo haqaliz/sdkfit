@@ -17,6 +17,11 @@ promise: flags, config keys and provider contracts may still change.
   the enclosing bindings. A duplicate helper name is ambiguous; a cross-package helper is not
   evidence.
 
+### Fixed
+
+- The service readiness ping reads the `runs` table, so a corrupt database reports 503 instead of
+  healthy on every platform (the previous `SELECT 1` was a no-schema check).
+
 ## [0.2.0] - 2026-11-14
 
 ### Added
