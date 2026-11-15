@@ -16,6 +16,11 @@ _RUN_COLUMNS = (
     " error, idempotency_key, attempts, cancel_requested"
 )
 
+# In `UPDATE ... FROM next`, an unqualified RETURNING id is ambiguous.
+_RETURNING_RUN_COLUMNS = ", ".join(
+    f"runs.{name.strip()}" for name in _RUN_COLUMNS.split(",")
+)
+
 _RUNS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
     id TEXT PRIMARY KEY,
@@ -162,7 +167,7 @@ class PostgresRunStore:
             " ORDER BY created_at, id FOR UPDATE SKIP LOCKED LIMIT 1"
             ") UPDATE runs SET status = 'running', started_at = %s,"
             " attempts = attempts + 1 FROM next WHERE runs.id = next.id"
-            f" RETURNING {_RUN_COLUMNS}",
+            f" RETURNING {_RETURNING_RUN_COLUMNS}",
             (self._now(),),
         ).fetchone()
         return None if row is None else _row_to_run(row)

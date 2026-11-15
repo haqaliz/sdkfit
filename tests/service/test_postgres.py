@@ -185,6 +185,7 @@ def test_claim_next_uses_skip_locked_and_marks_running():
     assert "UPDATE runs" in sql
     assert "status = 'running'" in sql
     assert "attempts = attempts + 1" in sql
+    assert "RETURNING runs.id" in sql
 
 
 def test_claim_next_on_an_empty_queue_is_none():
