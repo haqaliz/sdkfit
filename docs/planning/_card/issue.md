@@ -1,28 +1,23 @@
-# Card: feat/rename-sdkfit
+# Card: release/v0.5.0
 
 - **Source:** FALLBACK — no GitHub issue (`gh issue list` is empty).
 - **Owner:** aliz
-- **Type:** feat (rename/launch)
-- **Capability:** **T17 Rename to SDK Fit** — resolve the launch-name blocker
-- **Milestone:** after T16
-- **Branch:** `feat/rename-sdkfit/aliz`
-- **Worktree:** `.claude/worktrees/feat-rename-sdkfit`
+- **Type:** release
+- **Capability:** **Launch release** — v0.5.0 under the SDK Fit name
+- **Milestone:** after T17
+- **Branch:** `release/v0.5.0/aliz`
+- **Worktree:** `.claude/worktrees/release-v0.5.0`
 
 ## Brief
 
-The T16 name check found that **Tenon**/`tenonhq` collides with the active company at
-**tenonhq.com**. The launch name is now **SDK Fit**, distribution and CLI **`sdkfit`**.
+The first release under **SDK Fit** (`sdkfit`). It moves the T16 launch-readiness work and the T17
+rename from `Unreleased` into `0.5.0`, bumps the package, and publishes the annotated `v0.5.0` tag.
+The tag workflow creates the GitHub release with the wheel/sdist, publishes the
+`ghcr.io/haqaliz/sdkfit` image, and publishes `sdkfit` to PyPI via OIDC trusted publishing
+(`PYPI_PUBLISH=true`, `pypi` environment).
 
-This slice renames the product end to end:
-- distribution, import package, console script, `--version`, env vars (`TENON_*` → `SDKFIT_*`);
-- source/tests/fixtures, Dockerfile/Compose/Caddy, Kubernetes resource names and image path, scripts;
-- README, current technical docs, launch kit, PyPI trusted-publisher guide, changelog/status;
-- optionally the GitHub repository (`haqaliz/tenon` → `haqaliz/sdkfit`); GitHub redirects old URLs.
-
-Historical `CHANGELOG.md` entries and `docs/planning/**` records keep the old name. No behavior change
-and no version bump: the release PR will cut **v0.5.0** under the new name.
+No behavior change; no new features; the service stays self-hosted.
 
 ## Scope fence
 
-Not this card: new features, a logo/visual identity, PyPI/GHCR live publishes, the Product Hunt
-submission, backward-compatible `tenon` aliases (pre-1.0, no public PyPI release yet).
+Not this card: new features, a Product Hunt submission, generated visuals, a hosted demo.

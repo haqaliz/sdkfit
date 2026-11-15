@@ -1,6 +1,6 @@
 [project]
 name = "sdkfit"
-version = "0.4.0"
+version = "0.5.0"
 description = "Keep your code fitted to the APIs it depends on."
 requires-python = ">=3.11"
 dependencies = [

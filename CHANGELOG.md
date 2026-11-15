@@ -7,6 +7,8 @@ promise: flags, config keys and provider contracts may still change.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-16
+
 ### Added
 
 - **Launch readiness (T16):** PyPI trusted publishing (OIDC, no token secret) behind the

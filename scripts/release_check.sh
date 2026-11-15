@@ -3,7 +3,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-VERSION="0.4.0"
+VERSION="0.5.0"
 
 uv sync --frozen
 uv run pytest
