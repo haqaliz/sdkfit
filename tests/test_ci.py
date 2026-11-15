@@ -1,5 +1,7 @@
 """Static invariants for the CI and release workflows."""
 
+import os
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -62,6 +64,37 @@ def test_release_is_tag_driven_with_assets_and_notes():
     assert action["with"]["files"] == "dist/*"
     assert action["with"]["body_path"] == "release-notes.md"
     assert action["with"]["fail_on_unmatched_files"] is True
+
+
+# Spec AC2: the release body is the version's section, including the dated heading.
+def test_the_release_notes_extraction_handles_the_dated_heading(tmp_path):
+    workflow = a_workflow("release.yml")
+    release = workflow["jobs"]["release"]
+    script = next(
+        step["run"]
+        for step in release["steps"]
+        if "release-notes.md" in str(step.get("run", ""))
+    )
+    (tmp_path / "CHANGELOG.md").write_text(
+        "## [Unreleased]\n\n"
+        "## [1.2.3] - 2026-01-01\n\n"
+        "### Added\n\n"
+        "- the feature\n\n"
+        "## [1.2.2] - 2025-12-01\n\n"
+        "- the old entry\n",
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        ["bash", "-e", "-c", script],
+        cwd=tmp_path,
+        env={**os.environ, "GITHUB_REF_NAME": "v1.2.3"},
+        check=True,
+    )
+
+    notes = (tmp_path / "release-notes.md").read_text(encoding="utf-8")
+    assert "the feature" in notes
+    assert "the old entry" not in notes
 
 
 # Spec AC3: PyPI is an explicit, token-based opt-in and is skipped by default.
