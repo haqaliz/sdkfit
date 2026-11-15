@@ -275,4 +275,4 @@ test"` is just a user command.
   T13b (resilience), T14 (CI and release pipeline) and T15 (Postgres store + Kubernetes manifests)
   shipped; T10f (webhook-triggered runs) shipped. Repo-wide cross-package indexes are not started.
   v0.1.0 was the first tagged release (2026-11-13); v0.2.0 shipped 2026-11-14; v0.3.0 shipped
-  2026-11-15.
+  2026-11-15; v0.4.0 shipped 2026-11-16.

@@ -54,7 +54,7 @@ deployable service behind Caddy) and T13b (workers/retries/cancel/metrics/SQLite
 service is containerized, resilient, event-triggerable and horizontally scalable; repo-wide
 cross-package receiver indexes are not.
 
-**v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15**
+**v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15; v0.4.0 released 2026-11-16**
 — see `CHANGELOG.md` and `docs/RELEASE.md`.
 
 ---

@@ -33,8 +33,8 @@ The Dockerfile installs the `app` and `postgres` extras, so one image runs SQLit
 Postgres in the cluster.
 
 ```sh
-docker build -t ghcr.io/OWNER/tenon:0.3.0 .
-docker push ghcr.io/OWNER/tenon:0.3.0
+docker build -t ghcr.io/OWNER/tenon:0.4.0 .
+docker push ghcr.io/OWNER/tenon:0.4.0
 ```
 
 Set that reference in `deploy/k8s/deployment.yaml` (`image:`). Pin a version tag, not `latest`.

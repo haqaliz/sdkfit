@@ -7,6 +7,17 @@ promise: flags, config keys and provider contracts may still change.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
+### Added
+
+- **Hardened cloud deployment (T15):** a Postgres `PostgresRunStore` (optional `[postgres]` extra)
+  with `FOR UPDATE SKIP LOCKED` claims and a stale-lease recovery, `provider serve
+  --database-url`/`TENON_DATABASE_URL` (exactly one of `--db`/`--database-url`), and Kubernetes
+  manifests under `deploy/k8s` (Deployment, Service, Ingress with TLS and nginx rate limits, HPA, a
+  portable Postgres example, placeholders and a kustomization). The guide is
+  `docs/technical/CLOUD.md`.
+
 ## [0.3.0] - 2026-11-15
 
 ### Added
