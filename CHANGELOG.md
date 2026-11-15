@@ -7,6 +7,14 @@ promise: flags, config keys and provider contracts may still change.
 
 ## [Unreleased]
 
+### Added
+
+- **Launch readiness (T16):** PyPI trusted publishing (OIDC, no token secret) behind the
+  `PYPI_PUBLISH` gate, a tag job that publishes `ghcr.io/haqaliz/tenon` with the service image, an
+  offline launch demo (`scripts/launch_demo.sh`) and a launch kit (`docs/launch/`) with positioning,
+  FAQ, gallery plan, first comment and the name/handles check. **The `tenonhq` name collides with
+  the active company at tenonhq.com; decide the launch name before submitting.**
+
 ## [0.4.0] - 2026-11-16
 
 ### Added

@@ -98,6 +98,12 @@ artifact. The PR must be green before merging.
 9. **Verify** the release page/assets, the version badge, the changelog link, the container image
    (`ghcr.io/haqaliz/tenon:X.Y.Z`) and (if enabled) the PyPI version.
 
+## Launch assets
+
+After the tag publishes, run the launch checklist in `docs/launch/LAUNCH.md`: PyPI/GHCR install and
+pull checks, the offline demo, the gallery, the Product Hunt draft and the name decision in
+`docs/launch/NAME_CHECK.md`.
+
 ## Manual fallback
 
 If the workflow is unavailable, the old path still works: push the tag and create the release
