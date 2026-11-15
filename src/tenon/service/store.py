@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -101,6 +102,58 @@ class Event:
             "received_at": self.received_at,
             "payload": self.payload,
         }
+
+
+@runtime_checkable
+class Store(Protocol):
+    """The queue/store surface shared by the SQLite and Postgres backends."""
+
+    def create_run(
+        self, bundle: str, idempotency_key: str | None = None
+    ) -> Run: ...
+
+    def claim_next(self) -> Run | None: ...
+
+    def requeue(self, run_id: str) -> Run: ...
+
+    def finish(
+        self,
+        run_id: str,
+        *,
+        status: str,
+        exit: int,
+        report: dict | None,
+        error: str | None = None,
+    ) -> Run: ...
+
+    def request_cancel(self, run_id: str) -> Run | None: ...
+
+    def cancel_requested(self, run_id: str) -> bool: ...
+
+    def recover(self, older_than: datetime | None = None) -> int:
+        """Re-queue stranded rows; a backend may bound it to a stale lease."""
+        ...
+
+    def counts(self) -> dict[str, int]: ...
+
+    def get(self, run_id: str) -> Run | None: ...
+
+    def find_by_idempotency_key(self, key: str | None) -> Run | None: ...
+
+    def list(self, limit: int = 50) -> tuple[Run, ...]: ...
+
+    def record_event(
+        self,
+        delivery: str,
+        event: str,
+        action: str | None = None,
+        installation: str | None = None,
+        payload: dict | None = None,
+    ) -> bool: ...
+
+    def ping(self) -> bool: ...
+
+    def close(self) -> None: ...
 
 
 def _row_to_run(row: sqlite3.Row) -> Run:
@@ -296,7 +349,8 @@ class RunStore:
         return row is not None and bool(row["cancel_requested"])
 
     # Spec AC4: restart recovery; a requested cancel wins over a requeue.
-    def recover(self) -> int:
+    # SQLite is single-process, so restart recovery ignores the lease cutoff.
+    def recover(self, older_than: datetime | None = None) -> int:
         with self._lock:
             finished_at = self._now().isoformat()
             with self._connection:

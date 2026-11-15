@@ -13,10 +13,12 @@ Engine capabilities in build order. Each lands test-first.
 | **T7** | **Proof ladder.** Types/build-only, characterization tests, recorded-call replay. | T4 | Weak proof labelled weak | **Shipped 2026-11-06** |
 | **T8** | **MCP diffs and probe mode.** Diff MCP tool schemas; run an agent against an API or server. | T1, T4 | | **Shipped 2026-11-07** |
 | **T9** | **Benchmark and history.** Labelled (change, patch, proof, outcome) corpus. | T4, T5 | Measure against human outcomes | **Shipped 2026-11-07** |
-| **T10** | **Provider layer and GitHub App (hosted).** Vendor-pushed migrations. | T4-T9 | Opt-in, BYOK | **Shipped 2026-11-11 (MVP)** — GitHub App remote, provider bundle, local/installed fan-out, a self-hosted service and webhook-triggered runs; a hardened cloud deployment is later |
+| **T10** | **Provider layer and GitHub App (hosted).** Vendor-pushed migrations. | T4-T9 | Opt-in, BYOK | **Shipped 2026-11-11 (MVP)** — GitHub App remote, provider bundle, local/installed fan-out, a self-hosted service and webhook-triggered runs; hardened cloud deployment shipped as T15 |
 | **T11** | **More languages.** Go, Rust, C#. | T2 pattern | One at a time | **Shipped 2026-11-11** — Rust, Go and C# locators |
 | **T12** | **Receiver tracking.** Method/fluent chains through an explicitly typed client. | T11 | Explicit evidence only | **Shipped 2026-11-12** — five languages; T12c returns, T12d parameters, T12e cross-file/closures |
 | **T13** | **Hardened deployment.** Container, TLS proxy, backups, resilience. | T10e | Operator-owned secrets | **Shipped 2026-11-12** — deployable Compose + Caddy, workers/retries/cancel/metrics, SQLite hardening |
+| **T14** | **CI and release pipeline.** Test matrix, artifacts and a tag-driven release. | T13 | PyPI an explicit opt-in | **Shipped 2026-11-14** — CI 3.11–3.13 + build, tag release with wheel/sdist, gated PyPI |
+| **T15** | **Hardened cloud deployment.** Shared Postgres queue and Kubernetes manifests. | T13 | Operator-owned cluster/secrets | **Shipped 2026-11-16** — `PostgresRunStore`, `--database-url`, Deployment/Ingress/HPA, cloud guide |
 
 ### T1 as shipped (2026-10-26)
 
@@ -432,6 +434,22 @@ offline.
 
 Known limits: no per-repo filter (a triggered run covers the whole installation); a noisy event can
 queue many full runs, so map a specific action; per-run retries/backoff remain out of scope.
+
+### T15 as built (2026-11-16)
+
+`PostgresRunStore` shares the T13 `RunStore` API (a `Store` protocol) over a Postgres schema with
+`timestamptz`/`jsonb` columns; a claim is one `FOR UPDATE SKIP LOCKED` statement, idempotency uses
+`ON CONFLICT`, and startup recovery only re-queues rows older than the `--run-timeout` lease. The
+driver is an optional `[postgres]` extra. `provider serve --database-url`/`TENON_DATABASE_URL`
+selects it (exactly one of `--db`/`--database-url`). `deploy/k8s/` carries a two-replica hardened
+Deployment, Service, TLS Ingress with nginx rate limits, CPU HPA, a portable single-instance
+Postgres StatefulSet, placeholder Secrets/ConfigMap, a bundle PVC and a kustomization; the guide is
+`docs/technical/CLOUD.md`. 2,771 tests, offline.
+
+Known limits: the SQL is tested against a fake driver (the first real Postgres run is the operator's
+integration test); the in-cluster Postgres example is not HA and has no backups (use a managed DB);
+ingress rate limits are nginx-specific; recovery waits for the run-timeout lease; the HPA scales on
+CPU, not queue depth; the service stays single-tenant.
 
 
 

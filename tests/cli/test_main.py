@@ -1,5 +1,6 @@
 """The CLI entry point: parse, compose the stages, report and return a code."""
 
+import builtins
 import importlib
 import json
 import os
@@ -9,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -4962,6 +4964,7 @@ def test_provider_serve_help_lists_the_flags(capsys):
     for flag in (
         "--bundles",
         "--db",
+        "--database-url",
         "--api-token",
         "--webhook-secret",
         "--trigger",
@@ -5422,3 +5425,141 @@ def test_provider_serve_reads_the_webhook_secret_from_the_env(
     response = seen["api"].handle("POST", "/webhooks/github", {}, b"{}")
     assert response.status == 401
     capsys.readouterr()
+
+
+def a_pg_serve_argv(tmp_path, *extra, bundles=None):
+    return [
+        "provider",
+        "serve",
+        "--bundles",
+        str(bundles if bundles is not None else tmp_path / "bundles"),
+        *extra,
+    ]
+
+
+def a_fake_postgres_store(monkeypatch):
+    """Patch the CLI's Postgres store with a recorder; returns its state."""
+    state = {"dsns": []}
+
+    class FakeStore:
+        def __init__(self, dsn):
+            state["dsns"].append(dsn)
+
+        def recover(self, older_than=None):
+            state["older_than"] = older_than
+
+        def cancel_requested(self, run_id):
+            return False
+
+        def close(self):
+            state["closed"] = True
+
+    monkeypatch.setattr(cli_main, "PostgresRunStore", FakeStore)
+    return state
+
+
+# Spec AC1/AC3: --database-url selects Postgres and recovers past the run-timeout lease.
+def test_provider_serve_database_url_selects_postgres(tmp_path, monkeypatch):
+    bundles = tmp_path / "bundles"
+    bundles.mkdir()
+    state = a_fake_postgres_store(monkeypatch)
+    a_fake_server(monkeypatch)
+    a_fake_workers(monkeypatch)
+
+    code = main(
+        a_pg_serve_argv(
+            tmp_path,
+            "--api-token",
+            SERVE_TOKEN,
+            "--database-url",
+            "postgresql://db/tenon",
+            "--run-timeout",
+            "60",
+            bundles=bundles,
+        )
+    )
+
+    assert code == 0
+    assert state["dsns"] == ["postgresql://db/tenon"]
+    delta = (datetime.now(timezone.utc) - state["older_than"]).total_seconds()
+    assert 30 <= delta <= 600
+
+
+# Spec AC1: TENON_DATABASE_URL is the environment form of --database-url.
+def test_provider_serve_reads_the_database_url_from_the_env(tmp_path, monkeypatch):
+    monkeypatch.setenv("TENON_DATABASE_URL", "postgresql://env/tenon")
+    bundles = tmp_path / "bundles"
+    bundles.mkdir()
+    state = a_fake_postgres_store(monkeypatch)
+    a_fake_server(monkeypatch)
+    a_fake_workers(monkeypatch)
+
+    assert (
+        main(a_pg_serve_argv(tmp_path, "--api-token", SERVE_TOKEN, bundles=bundles))
+        == 0
+    )
+
+    assert state["dsns"] == ["postgresql://env/tenon"]
+
+
+# Spec AC2: both store flags are ambiguous and never open a store.
+def test_provider_serve_rejects_both_stores(tmp_path, capsys):
+    bundles = tmp_path / "bundles"
+    bundles.mkdir()
+
+    code = main(
+        a_serve_argv(
+            tmp_path,
+            "--api-token",
+            SERVE_TOKEN,
+            "--database-url",
+            "postgresql://db/tenon",
+            bundles=bundles,
+        )
+    )
+
+    assert code == 2
+    assert "exactly one" in capsys.readouterr().err
+
+
+# Spec AC2: neither store flag is a named usage error.
+def test_provider_serve_requires_a_store(tmp_path, capsys):
+    bundles = tmp_path / "bundles"
+    bundles.mkdir()
+
+    assert (
+        main(a_pg_serve_argv(tmp_path, "--api-token", SERVE_TOKEN, bundles=bundles))
+        == 2
+    )
+    assert "exactly one" in capsys.readouterr().err
+
+
+# Spec AC4: a missing psycopg is a named usage error, not a traceback.
+def test_provider_serve_postgres_without_the_driver_is_a_usage_error(
+    tmp_path, monkeypatch, capsys
+):
+    bundles = tmp_path / "bundles"
+    bundles.mkdir()
+    real_import = builtins.__import__
+
+    def blocked(name, *args, **kwargs):
+        if name == "psycopg":
+            raise ImportError("no psycopg")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", blocked)
+
+    code = main(
+        a_pg_serve_argv(
+            tmp_path,
+            "--api-token",
+            SERVE_TOKEN,
+            "--database-url",
+            "postgresql://db/tenon",
+            bundles=bundles,
+        )
+    )
+
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "tenonhq[postgres]" in err

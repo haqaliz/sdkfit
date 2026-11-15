@@ -1,0 +1,13 @@
+# The GitHub App identity and commit author. Copy, fill, and apply with the
+# Secrets before the Deployment.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tenon-config
+  labels:
+    app: tenon
+data:
+  app-id: "replace-with-the-github-app-id"
+  app-installation-id: "replace-with-the-installation-id"
+  git-author-name: Tenon Service
+  git-author-email: tenon@example.com

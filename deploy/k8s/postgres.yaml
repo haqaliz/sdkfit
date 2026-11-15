@@ -1,0 +1,76 @@
+# A portable single-instance Postgres for demos and small installs.
+# Production should use a managed, backed-up, highly available database; point
+# TENON_DATABASE_URL at it and skip this file.
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenon-postgres
+  labels:
+    app: tenon-postgres
+spec:
+  clusterIP: None
+  selector:
+    app: tenon-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tenon-postgres
+  labels:
+    app: tenon-postgres
+spec:
+  serviceName: tenon-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenon-postgres
+  template:
+    metadata:
+      labels:
+        app: tenon-postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:17
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: tenon
+            - name: POSTGRES_USER
+              value: tenon
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tenon-secrets
+                  key: postgres-password
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U tenon -d tenon"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

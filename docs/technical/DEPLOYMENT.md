@@ -3,7 +3,8 @@
 `tenon provider serve` ships as a small Docker image behind Caddy: the service talks HTTP on the
 private compose network, Caddy terminates TLS on 80/443, and only the database volume is writable.
 This guide is for a single VM. For the local MVP behavior see the README; T13b adds parallel
-workers, bounded retries, cancel and Prometheus metrics.
+workers, bounded retries, cancel and Prometheus metrics. For Kubernetes, a shared Postgres queue and
+horizontal scaling see `CLOUD.md`.
 
 ## Prerequisites
 

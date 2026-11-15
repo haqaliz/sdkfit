@@ -6,6 +6,7 @@ import os
 import shlex
 import sys
 import tomllib
+from datetime import datetime, timedelta, timezone
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Sequence
@@ -58,6 +59,7 @@ from tenon.provider import MigrationBundle, load_bundle, load_repos
 from tenon.service import RunStore
 from tenon.service.api import Api, resolve_bundle
 from tenon.service.http import serve
+from tenon.service.postgres import PostgresRunStore
 from tenon.service.runner import CommandRunner, Outcome as RunOutcome
 from tenon.service.store import StoreError
 from tenon.service.triggers import parse_triggers
@@ -268,7 +270,13 @@ def _parser() -> argparse.ArgumentParser:
         "--bundles", required=True, metavar="DIR", help="bundle directory"
     )
     serve_command.add_argument(
-        "--db", required=True, metavar="PATH", help="SQLite run store"
+        "--db", default=None, metavar="PATH", help="SQLite run store"
+    )
+    serve_command.add_argument(
+        "--database-url",
+        default=None,
+        metavar="URL",
+        help="Postgres run store DSN (or TENON_DATABASE_URL)",
     )
     serve_command.add_argument(
         "--api-token",
@@ -807,6 +815,13 @@ def _serve_execute(runner: CommandRunner, bundles: Path, cancel=None):
     return execute
 
 
+# Spec AC1: the URL selects Postgres; the path keeps the SQLite default.
+def _open_store(db: str | None, database_url: str | None):
+    if database_url:
+        return PostgresRunStore(database_url)
+    return RunStore(db)
+
+
 # Spec AC1/AC2/AC4: validate the config, then serve N workers and the API.
 def _serve(args: argparse.Namespace) -> int:
     token = args.api_token or os.environ.get("TENON_API_TOKEN")
@@ -830,12 +845,23 @@ def _serve(args: argparse.Namespace) -> int:
         triggers = parse_triggers(args.trigger, bundles)
     except ValueError as error:
         raise _Usage(str(error)) from None
+    database_url = (
+        args.database_url or os.environ.get("TENON_DATABASE_URL") or None
+    )
+    if bool(args.db) == bool(database_url):
+        raise _Usage(
+            "exactly one of --db or --database-url/TENON_DATABASE_URL is required"
+        )
     try:
-        store = RunStore(args.db)
+        store = _open_store(args.db, database_url)
     except StoreError as error:
         raise _Usage(str(error)) from None
-    # Spec AC5: a restart re-queues (or cancels) the stranded running rows.
-    store.recover()
+    # Spec AC5: Postgres only recovers runs past the run-timeout lease;
+    # SQLite is single-process and ignores the cutoff.
+    store.recover(
+        older_than=datetime.now(timezone.utc)
+        - timedelta(seconds=args.run_timeout)
+    )
 
     runner = CommandRunner(
         lambda bundle: _serve_command(args, bundle), timeout=args.run_timeout
