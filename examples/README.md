@@ -5,6 +5,9 @@ The quickstart runs the shipped pipeline against the committed, read-only fixtur
 `acme/billing.py`'s `client.charges.create(...)`, proposes the `amount_cents` rename and proves it
 with the fixture's import.
 
+For a self-contained launch demo (its own consumer repo, bundle and a recorded transcript), run
+`bash scripts/launch_demo.sh` and see `examples/launch-demo/` and `docs/launch/DEMO.md`.
+
 From the repository root:
 
 ```sh
