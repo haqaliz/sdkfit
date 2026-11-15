@@ -274,4 +274,4 @@ test"` is just a user command.
   inference) and T12e (cross-file signatures and closures) shipped; T13a (deployable service) and
   T13b (resilience) shipped; T10f (webhook-triggered runs) shipped. Repo-wide cross-package indexes
   and a hardened cloud deployment beyond Compose are not started. v0.1.0 was the first tagged
-  release (2026-11-13); v0.2.0 shipped 2026-11-14.
+  release (2026-11-13); v0.2.0 shipped 2026-11-14; v0.3.0 shipped 2026-11-15.

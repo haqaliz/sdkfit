@@ -52,8 +52,8 @@ deployable service behind Caddy) and T13b (workers/retries/cancel/metrics/SQLite
 2026-11-12; T10f (webhook-triggered runs) shipped 2026-11-14. The self-hosted service is
 containerized, resilient and event-triggerable; repo-wide cross-package receiver indexes are not.
 
-**v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14** — see `CHANGELOG.md` and
-`docs/RELEASE.md`.
+**v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15**
+— see `CHANGELOG.md` and `docs/RELEASE.md`.
 
 ---
 
