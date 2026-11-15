@@ -56,7 +56,7 @@ cross-package receiver indexes are not. T16 (launch readiness) and T17 (rename t
 ready: PyPI trusted publishing, a GHCR image job, the offline demo, the launch kit and a resolved
 `SDK Fit`/`sdkfit` name.
 
-**v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15; v0.4.0 released 2026-11-16**
+**v0.1.0 released 2026-11-13 (the first tag); v0.2.0 released 2026-11-14; v0.3.0 released 2026-11-15; v0.4.0 released 2026-11-16; v0.5.0 released 2026-11-16**
 — see `CHANGELOG.md` and `docs/RELEASE.md`.
 
 ---

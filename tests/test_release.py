@@ -1,4 +1,4 @@
-"""Release v0.4.0: version, changelog, checklist and quickstart invariants."""
+"""Release v0.5.0: version, changelog, checklist and quickstart invariants."""
 
 import shlex
 import sys
@@ -21,18 +21,18 @@ def a_pyproject() -> dict:
 
 
 # Spec AC1: the source version is 0.2.0 and the CLI reports the installed metadata.
-def test_version_is_0_4_0(capsys):
-    assert a_pyproject()["project"]["version"] == "0.4.0"
+def test_version_is_0_5_0(capsys):
+    assert a_pyproject()["project"]["version"] == "0.5.0"
 
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out == "sdkfit 0.4.0\n"
+    assert capsys.readouterr().out == "sdkfit 0.5.0\n"
 
 
 # Spec AC2: the 0.2.0 changelog section exists and names the limits.
-def test_changelog_has_the_0_4_0_section():
+def test_changelog_has_the_0_5_0_section():
     text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-    assert "## [0.4.0] - 2026-11-16" in text
+    assert "## [0.5.0] - 2026-11-16" in text
     assert "Known limits" in text
 
 
@@ -121,4 +121,4 @@ def test_readme_links_the_release_docs():
     assert "CHANGELOG.md" in text
     assert "examples/README.md" in text
     assert "docs/RELEASE.md" in text
-    assert "version-0.4.0" in text
+    assert "version-0.5.0" in text

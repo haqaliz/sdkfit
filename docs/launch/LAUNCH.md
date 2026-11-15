@@ -68,29 +68,26 @@ machine-readable contract (SDK Fit works from OpenAPI 3.x and MCP tool schemas).
 
 ## Install and verify
 
-Today, from source:
-
-```sh
-git clone https://github.com/haqaliz/sdkfit.git
-cd sdkfit
-uv sync
-uv run sdkfit --version
-bash scripts/launch_demo.sh
-```
-
-After the next tag publishes, the launch install is:
-
 ```sh
 pip install sdkfit
 sdkfit --version
 sdkfit check --help
 ```
 
+From source (for the demo):
+
+```sh
+git clone https://github.com/haqaliz/sdkfit.git
+cd sdkfit
+uv sync
+bash scripts/launch_demo.sh
+```
+
 ## Launch-day checklist
 
 - [ ] **Name confirmed** in `NAME_CHECK.md`; re-check PyPI/npm/GitHub/domain/Product Hunt just before the launch.
-- [ ] PyPI trusted publisher configured, `PYPI_PUBLISH=true`, next tag published; a clean
-      `pip install <name>` in a fresh venv prints `sdkfit <version>`.
+- [ ] PyPI `sdkfit==<version>` installs in a fresh venv and prints `sdkfit <version>`; the
+      trusted publisher and `PYPI_PUBLISH` gate are set.
 - [ ] GHCR image public; `docker pull ghcr.io/haqaliz/sdkfit:<version>` succeeds; the manifest pins
       that tag.
 - [ ] `bash scripts/launch_demo.sh` is green and `docs/launch/DEMO.md` still matches.
