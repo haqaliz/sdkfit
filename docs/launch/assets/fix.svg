@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1270" height="760" viewBox="0 0 1270 760">
+  <rect width="1270" height="760" fill="#0B0E13"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.04" stroke-width="1">
+    <path d="M0 190H1270M0 380H1270M0 570H1270"/>
+    <path d="M317 0V760M634 0V760M951 0V760"/>
+  </g>
+
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <text x="70" y="74" fill="#F5C542" font-family="Menlo, monospace" font-size="20" letter-spacing="3">02 · PROVE</text>
+    <text x="70" y="138" fill="#F5F7FA" font-size="44" font-weight="700">Rewrite only what it can prove.</text>
+  </g>
+
+  <rect x="70" y="190" width="1130" height="460" rx="18" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+  <g font-family="Menlo, monospace">
+    <circle cx="102" cy="224" r="7" fill="#F87171"/>
+    <circle cx="126" cy="224" r="7" fill="#FBBF24"/>
+    <circle cx="150" cy="224" r="7" fill="#4ADE80"/>
+    <text x="180" y="230" fill="#5C6675" font-size="18">sdkfit fix</text>
+
+    <text x="110" y="282" fill="#5C6675" font-size="21">--- a/acme/billing.py</text>
+    <text x="110" y="310" fill="#5C6675" font-size="21">+++ b/acme/billing.py</text>
+    <text x="110" y="338" fill="#5C6675" font-size="21">@@ -4,4 +4,4 @@</text>
+
+    <text x="110" y="386" fill="#F5F7FA" font-size="23"> def create_charge(amount):</text>
+    <rect x="104" y="404" width="1000" height="36" rx="6" fill="#F87171" fill-opacity="0.10"/>
+    <text x="110" y="430" fill="#F87171" font-size="22">-    return client.charges.create(amount=amount, currency="usd")</text>
+    <rect x="104" y="444" width="1020" height="36" rx="6" fill="#4ADE80" fill-opacity="0.10"/>
+    <text x="110" y="470" fill="#4ADE80" font-size="22">+    return client.charges.create(amount_cents=amount, currency="usd")</text>
+
+    <rect x="110" y="520" width="360" height="56" rx="12" fill="#123524" stroke="#4ADE80" stroke-width="2"/>
+    <text x="132" y="557" fill="#4ADE80" font-size="24" font-weight="700">Proof: TESTS_PASSED</text>
+    <text x="110" y="612" fill="#5C6675" font-size="20">TESTS: python3 -c import acme.billing</text>
+  </g>
+
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <image xlink:href="sdkfit.svg" x="70" y="688" width="28" height="31"/>
+    <text x="106" y="718" fill="#F5F7FA" font-size="22" font-weight="700">SDK Fit</text>
+    <text x="1200" y="718" fill="#5C6675" font-size="18" text-anchor="end">github.com/haqaliz/sdkfit</text>
+  </g>
+</svg>

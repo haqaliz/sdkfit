@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1270" height="760" viewBox="0 0 1270 760">
+  <rect width="1270" height="760" fill="#0B0E13"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.04" stroke-width="1">
+    <path d="M0 190H1270M0 380H1270M0 570H1270"/>
+    <path d="M317 0V760M634 0V760M951 0V760"/>
+  </g>
+
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <text x="70" y="74" fill="#F5C542" font-family="Menlo, monospace" font-size="20" letter-spacing="3">01 · FIND</text>
+    <text x="70" y="138" fill="#F5F7FA" font-size="44" font-weight="700">Find the call sites a breaking change breaks.</text>
+  </g>
+
+  <rect x="70" y="190" width="1130" height="460" rx="18" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+  <g font-family="Menlo, monospace">
+    <circle cx="102" cy="224" r="7" fill="#F87171"/>
+    <circle cx="126" cy="224" r="7" fill="#FBBF24"/>
+    <circle cx="150" cy="224" r="7" fill="#4ADE80"/>
+    <text x="180" y="230" fill="#5C6675" font-size="18">sdkfit check</text>
+
+    <text x="110" y="300" fill="#F5C542" font-size="26">$</text>
+    <text x="136" y="300" fill="#F5F7FA" font-size="26">sdkfit check ./repo --old v1.yaml --new v2.yaml</text>
+
+    <text x="110" y="372" fill="#F5F7FA" font-size="24">renamed #/components/schemas/Charge/properties:</text>
+    <text x="134" y="404" fill="#F5C542" font-size="24">amount -&gt; amount_cents</text>
+
+    <text x="110" y="470" fill="#F5F7FA" font-size="28">acme/billing.py:7:34  keyword  amount</text>
+
+    <text x="110" y="548" fill="#4ADE80" font-size="28">1 change, 1 certain site, 0 ambiguity groups</text>
+
+    <text x="110" y="606" fill="#5C6675" font-size="20">No unproven site is claimed.</text>
+  </g>
+
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <image xlink:href="sdkfit.svg" x="70" y="688" width="28" height="31"/>
+    <text x="106" y="718" fill="#F5F7FA" font-size="22" font-weight="700">SDK Fit</text>
+    <text x="1200" y="718" fill="#5C6675" font-size="18" text-anchor="end">github.com/haqaliz/sdkfit</text>
+  </g>
+</svg>

@@ -7,6 +7,11 @@ promise: flags, config keys and provider contracts may still change.
 
 ## [Unreleased]
 
+### Added
+
+- **Project site, brand and donations:** a GitHub Pages landing page (`site/`), the official SDK Fit
+  logo across the README, site and launch assets, and an optional crypto donation link.
+
 ## [0.5.0] - 2026-11-16
 
 ### Added

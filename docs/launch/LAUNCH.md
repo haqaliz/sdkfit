@@ -95,11 +95,13 @@ bash scripts/launch_demo.sh
 - [ ] Gallery captured from [`GALLERY.md`](GALLERY.md).
 - [ ] Product Hunt draft has the final name, tagline, description, topics, gallery and first comment
       from [`FIRST_COMMENT.md`](FIRST_COMMENT.md).
-- [ ] Fresh-machine check: install, run the demo, open the README and the release page.
+- [ ] GitHub Pages site is live at https://haqaliz.github.io/sdkfit/; README and site show the logo and the donation link.
+- [ ] Fresh-machine check: install, run the demo, open the README, the site and the release page.
 - [ ] Optional but recommended: `CONTRIBUTING.md`, issue templates, a support/security contact.
 
 ## Assets and docs
 
+- Live project site: https://haqaliz.github.io/sdkfit/ (GitHub Pages, deployed from `site/`).
 - [`DEMO.md`](DEMO.md) — the recorded offline demo.
 - [`FAQ.md`](FAQ.md) — the questions a first installer asks.
 - [`GALLERY.md`](GALLERY.md) — the Product Hunt images and exact screens to capture.

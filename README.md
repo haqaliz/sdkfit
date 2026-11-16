@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/sdkfit.svg" width="110" alt="SDK Fit logo"></p>
+
 # SDK Fit
 
 **Keeps your code fitted to the APIs it depends on.** Detects breaking API changes, patches the
@@ -8,7 +10,7 @@ affected calls, and proves the fix against your own checks before it opens a pul
 [![CI](https://github.com/haqaliz/sdkfit/actions/workflows/ci.yml/badge.svg)](https://github.com/haqaliz/sdkfit/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-[Vision](VISION.md) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/technical/ARCHITECTURE.md) · [Capabilities](docs/technical/CAPABILITY_ROADMAP.md)
+[Website](https://haqaliz.github.io/sdkfit/) · [Vision](VISION.md) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/technical/ARCHITECTURE.md) · [Capabilities](docs/technical/CAPABILITY_ROADMAP.md)
 
 ---
 
@@ -429,8 +431,9 @@ Languages: Python, TypeScript/JavaScript, Rust, Go and C# shipped. Change source
 and MCP tools/list diffs, with the Python MCP tool-call locator; SDK metadata later. Consumer side
 first; the provider bundle (T10b) packages that run for one repo, local fan-out over a repos file
 (T10c) and installed fan-out through the app (T10d) run it across checkouts, and the local
-`sdkfit provider serve` (T10e) queues the installed run, and a Docker Compose + Caddy deployment
-(T13a) runs it behind TLS; resilience (T13b) is later.
+`sdkfit provider serve` (T10e) queues the installed run; webhook-triggered runs (T10f), a Docker
+Compose + Caddy deployment (T13a), bounded retries/cancel/metrics/recovery (T13b) and a Postgres +
+Kubernetes deployment (T15) are shipped.
 
 ## Docs
 
@@ -442,6 +445,14 @@ first; the provider bundle (T10b) packages that run for one repo, local fan-out 
 - [`docs/RELEASE.md`](docs/RELEASE.md)
 - [`docs/technical/CAPABILITY_ROADMAP.md`](docs/technical/CAPABILITY_ROADMAP.md)
 - [`docs/technical/ARCHITECTURE.md`](docs/technical/ARCHITECTURE.md)
+
+## Support the project
+
+If SDK Fit is useful to you, you can chip in with a crypto donation:
+
+<a href="https://nowpayments.io/donation?api_key=52f38854-167a-4828-a00f-0424ab7dcc1e" target="_blank" rel="noreferrer noopener">
+    <img src="https://nowpayments.io/images/embeds/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
+</a>
 
 ## Lineage
 
