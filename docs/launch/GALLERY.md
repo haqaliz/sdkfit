@@ -9,9 +9,9 @@ the committed assets use.
 
 - **Caption:** SDK Fit — breaking API changes, fixed and proven.
 - **Asset:** `assets/thumbnail.png` (1024×1024; source `assets/thumbnail.svg`).
-- **Screen:** a dark branded card with the official SDK Fit logo, `SDK Fit`, the tagline and
-  `pip install sdkfit`.
-- **Why:** the name and the value proposition must be readable at 240 px.
+- **Screen:** the official SDK Fit logo alone on a dark square; no text, so the Product Hunt
+  thumbnail and its social card stay brand-only.
+- **Why:** the launch title and tagline carry the words; the mark is the thumbnail.
 
 ## 2. `sdkfit check` — the affected site
 
