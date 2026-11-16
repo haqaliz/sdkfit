@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SDK Fit — breaking API changes, fixed and proven</title>
+<meta name="description" content="SDK Fit finds the consumer call sites a breaking API change breaks, rewrites only the ones it can prove, runs your own checks, and opens a reviewed PR. Five languages, offline, self-hosted.">
+<meta name="theme-color" content="#070b18">
+<link rel="icon" href="assets/sdkfit.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="SDK Fit — breaking API changes, fixed and proven">
+<meta property="og:description" content="Finds the call sites a breaking API change breaks, rewrites only what it can prove, and opens a reviewed PR.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://haqaliz.github.io/sdkfit/">
+<meta property="og:image" content="https://haqaliz.github.io/sdkfit/assets/sdkfit-demo.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap head-inner">
+    <a class="brand" href="#top">
+      <img class="brand-mark" src="assets/sdkfit.svg" alt="" width="30" height="34">
+      <span>SDK Fit</span>
+    </a>
+    <nav aria-label="Primary">
+      <ul class="nav">
+        <li><a href="#why">Why</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#proof">Proof</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="https://github.com/haqaliz/sdkfit">GitHub</a></li>
+        <li><a href="https://pypi.org/project/sdkfit/">PyPI</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <img class="hero-mark" src="assets/sdkfit.svg" alt="SDK Fit logo" width="96" height="108">
+        <p class="chip">v0.5.0 &middot; Apache-2.0 &middot; self-hosted</p>
+        <h1 id="hero-title">SDK Fit</h1>
+        <p class="tagline">Breaking API changes, fixed and proven.</p>
+        <p class="lede">Finds the consumer call sites a breaking API change breaks, rewrites only the ones it can prove, runs your own checks, and opens a reviewed PR. No LLM in the analysis.</p>
+
+        <div class="actions">
+          <a class="btn btn-primary" href="https://github.com/haqaliz/sdkfit">View on GitHub</a>
+          <a class="btn" href="https://pypi.org/project/sdkfit/">Install from PyPI</a>
+          <a class="btn btn-quiet" href="https://github.com/haqaliz/sdkfit/blob/master/docs/launch/DEMO.md">See the demo</a>
+        </div>
+
+        <div class="terminal" aria-label="Quickstart commands">
+          <p class="terminal-bar"><span class="tick" aria-hidden="true"></span>quickstart</p>
+          <pre tabindex="0"><code><span class="t-prompt">$</span> pip install sdkfit
+<span class="t-prompt">$</span> sdkfit check ./repo --old v1.yaml --new v2.yaml
+<span class="t-prompt">$</span> sdkfit fix ./repo --old v1.yaml --new v2.yaml --check "pytest -q"</code></pre>
+        </div>
+        <p class="fine">The analysis and proof run offline; only the final push and PR touch a remote.</p>
+      </div>
+
+      <figure class="hero-demo">
+        <img src="assets/sdkfit-demo.png" alt="SDK Fit check output: one certain call site, no guessed patch" width="1270" height="760">
+        <figcaption>Real CLI output: one certain call site, no guessed patch.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="why" aria-labelledby="why-title">
+    <div class="wrap">
+      <p class="eyebrow">Why</p>
+      <h2 id="why-title">Evidence, not vibes.</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Proof-first</h3>
+          <p>Every patch states the strongest level that actually passed: <code>TESTS_PASSED</code>, <code>CHARACTERIZED</code>, <code>REPLAYED</code> or <code>TYPES_BUILD_ONLY</code>. Uncertain sites stay separate.</p>
+        </article>
+        <article class="card">
+          <h3>Deterministic and offline</h3>
+          <p>No LLM in the analysis. The detector, locator, patch and proof run locally; the final push/PR uses your own <code>git</code>/<code>gh</code> or a GitHub App.</p>
+        </article>
+        <article class="card">
+          <h3>A provider path</h3>
+          <p>A CLI for one repo, or a portable migration bundle and self-hosted service for a vendor migrating many customer repos.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-title">From API diff to reviewed PR.</h2>
+      <img class="wide" src="assets/sdkfit-flow.png" alt="Detect, locate, propose, prove and PR" width="1270" height="760" loading="lazy">
+      <div class="steps">
+        <div><span class="step-num">01</span><h3>Detect</h3><p>Two OpenAPI specs or MCP tool schemas.</p></div>
+        <div><span class="step-num">02</span><h3>Locate</h3><p>Python, TypeScript/JavaScript, Rust, Go and C#.</p></div>
+        <div><span class="step-num">03</span><h3>Propose</h3><p>Only the sites it can prove; the rest are listed.</p></div>
+        <div><span class="step-num">04</span><h3>Prove</h3><p>Your own checks, before and after.</p></div>
+        <div><span class="step-num">05</span><h3>PR</h3><p>Reviewed, never force-pushed or merged.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="proof" aria-labelledby="proof-title">
+    <div class="wrap proof-inner">
+      <div>
+        <p class="eyebrow">Proof</p>
+        <h2 id="proof-title">The diff is small. The proof is the point.</h2>
+        <p>SDK Fit applies the patch to a copy and runs your own checks before and after. A report-bearing run is terminal; a failure with no report can retry within the configured budget.</p>
+        <ul class="checks">
+          <li><code>TESTS_PASSED</code> your test command passes before and after</li>
+          <li><code>CHARACTERIZED</code> your characterization command passes</li>
+          <li><code>REPLAYED</code> recorded calls replay successfully</li>
+          <li><code>TYPES_BUILD_ONLY</code> the types build, and nothing more is claimed</li>
+        </ul>
+      </div>
+      <figure class="proof-demo">
+        <img src="assets/sdkfit-proof.png" alt="SDK Fit fix output with Proof: TESTS_PASSED" width="1270" height="760" loading="lazy">
+      </figure>
+    </div>
+  </section>
+
+  <section class="section alt" id="install" aria-labelledby="install-title">
+    <div class="wrap install">
+      <p class="eyebrow">Install</p>
+      <h2 id="install-title">One command, five languages.</h2>
+      <pre><code>pip install sdkfit
+sdkfit --version
+sdkfit check --help</code></pre>
+      <p>Python, TypeScript/JavaScript, Rust, Go and C#. Apache-2.0, pre-1.0, self-hosted. The launch demo runs offline in about 30 seconds.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="https://github.com/haqaliz/sdkfit">GitHub</a>
+        <a class="btn" href="https://pypi.org/project/sdkfit/">PyPI</a>
+        <a class="btn btn-quiet" href="https://github.com/haqaliz/sdkfit/blob/master/docs/technical/ARCHITECTURE.md">Architecture</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="support" aria-labelledby="support-title">
+    <div class="wrap">
+      <h2 id="support-title">Support the project</h2>
+      <p>SDK Fit is Apache-2.0 and self-hosted. If it is useful to you, you can chip in with a crypto donation.</p>
+      <a class="btn btn-quiet" href="https://nowpayments.io/donation?api_key=52f38854-167a-4828-a00f-0424ab7dcc1e" target="_blank" rel="noreferrer noopener">Crypto donation</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-inner">
+    <p>SDK Fit &middot; keeps your code fitted to the APIs it depends on.</p>
+    <p class="foot-links">
+      <a href="https://github.com/haqaliz/sdkfit">GitHub</a>
+      <a href="https://pypi.org/project/sdkfit/">PyPI</a>
+      <a href="https://github.com/haqaliz/sdkfit/blob/master/docs/ROADMAP.md">Roadmap</a>
+      <a href="https://github.com/haqaliz/sdkfit/blob/master/docs/technical/ARCHITECTURE.md">Architecture</a>
+      <a href="https://nowpayments.io/donation?api_key=52f38854-167a-4828-a00f-0424ab7dcc1e" target="_blank" rel="noreferrer noopener">Crypto donation</a>
+      <a href="https://github.com/haqaliz/sdkfit/blob/master/LICENSE">Apache-2.0</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

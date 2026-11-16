@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1270" height="760" viewBox="0 0 1270 760">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#5C6675"/>
+    </marker>
+  </defs>
+  <rect width="1270" height="760" fill="#0B0E13"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.04" stroke-width="1">
+    <path d="M0 190H1270M0 380H1270M0 570H1270"/>
+    <path d="M317 0V760M634 0V760M951 0V760"/>
+  </g>
+
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <text x="70" y="74" fill="#F5C542" font-family="Menlo, monospace" font-size="20" letter-spacing="3">03 · FLOW</text>
+    <text x="70" y="138" fill="#F5F7FA" font-size="44" font-weight="700">From API diff to reviewed PR — without an LLM.</text>
+  </g>
+
+  <!-- five stages -->
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <g>
+      <rect x="45" y="240" width="200" height="110" rx="16" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+      <text x="65" y="278" fill="#F5C542" font-family="Menlo, monospace" font-size="16">01</text>
+      <text x="65" y="312" fill="#F5F7FA" font-size="23" font-weight="700">DETECT</text>
+      <text x="65" y="337" fill="#5C6675" font-size="14">OpenAPI / MCP</text>
+    </g>
+    <g>
+      <rect x="283" y="240" width="200" height="110" rx="16" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+      <text x="303" y="278" fill="#F5C542" font-family="Menlo, monospace" font-size="16">02</text>
+      <text x="303" y="312" fill="#F5F7FA" font-size="23" font-weight="700">LOCATE</text>
+      <text x="303" y="337" fill="#5C6675" font-size="14">five languages</text>
+    </g>
+    <g>
+      <rect x="521" y="240" width="200" height="110" rx="16" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+      <text x="541" y="278" fill="#F5C542" font-family="Menlo, monospace" font-size="16">03</text>
+      <text x="541" y="312" fill="#F5F7FA" font-size="23" font-weight="700">PROPOSE</text>
+      <text x="541" y="337" fill="#5C6675" font-size="14">certain sites only</text>
+    </g>
+    <g>
+      <rect x="759" y="240" width="200" height="110" rx="16" fill="#121722" stroke="#F5C542" stroke-width="3"/>
+      <text x="779" y="278" fill="#F5C542" font-family="Menlo, monospace" font-size="16">04</text>
+      <text x="779" y="312" fill="#F5C542" font-size="23" font-weight="700">PROVE</text>
+      <text x="779" y="337" fill="#9AA4B2" font-size="14">your own checks</text>
+    </g>
+    <g>
+      <rect x="997" y="240" width="200" height="110" rx="16" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+      <text x="1017" y="278" fill="#F5C542" font-family="Menlo, monospace" font-size="16">05</text>
+      <text x="1017" y="312" fill="#F5F7FA" font-size="23" font-weight="700">PR</text>
+      <text x="1017" y="337" fill="#5C6675" font-size="14">reviewed, never merged</text>
+    </g>
+
+    <g stroke="#5C6675" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M249 295H276"/>
+      <path d="M487 295H514"/>
+      <path d="M725 295H752"/>
+      <path d="M963 295H990"/>
+    </g>
+  </g>
+
+  <rect x="70" y="430" width="1130" height="190" rx="18" fill="#121722" stroke="#2A313B" stroke-width="2"/>
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <text x="100" y="476" fill="#F5F7FA" font-size="24" font-weight="700">The proof is the contract</text>
+    <text x="100" y="504" fill="#9AA4B2" font-size="16">Every patch states the strongest level that actually passed.</text>
+  </g>
+  <g font-family="Menlo, monospace" font-size="15">
+    <rect x="100" y="530" width="250" height="48" rx="10" fill="#123524" stroke="#4ADE80" stroke-width="2"/>
+    <text x="115" y="560" fill="#4ADE80">TESTS_PASSED</text>
+    <rect x="370" y="530" width="250" height="48" rx="10" fill="#0E1116" stroke="#2A313B" stroke-width="2"/>
+    <text x="385" y="560" fill="#9AA4B2">CHARACTERIZED</text>
+    <rect x="640" y="530" width="250" height="48" rx="10" fill="#0E1116" stroke="#2A313B" stroke-width="2"/>
+    <text x="655" y="560" fill="#9AA4B2">REPLAYED</text>
+    <rect x="910" y="530" width="260" height="48" rx="10" fill="#0E1116" stroke="#2A313B" stroke-width="2"/>
+    <text x="925" y="560" fill="#9AA4B2">TYPES_BUILD_ONLY</text>
+  </g>
+
+  <g font-family="Helvetica Neue, Arial, sans-serif">
+    <text x="70" y="676" fill="#5C6675" font-size="18">No LLM. No force-push. No auto-merge.</text>
+    <image xlink:href="sdkfit.svg" x="70" y="700" width="30" height="34"/>
+    <text x="112" y="730" fill="#F5F7FA" font-size="22" font-weight="700">SDK Fit</text>
+    <text x="1200" y="730" fill="#5C6675" font-size="18" text-anchor="end">github.com/haqaliz/sdkfit</text>
+  </g>
+</svg>
